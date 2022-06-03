@@ -77,3 +77,18 @@ def login(request):
 def logout(request):
     request.session.flush()
     return JsonResponse({'errno': 0, 'msg': '註銷成功'})
+
+
+@csrf_exempt
+def get_user_by_username(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        if len(str(username)) == 0:
+            return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
+        try:
+            user = User.objects.get(username=username)
+            return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': user.to_dict(exclude='password')})
+        except User.DoesNotExist:
+            return JsonResponse({'errno': 906, 'msg': '用戶不存在'})
+    else:
+        return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST'})

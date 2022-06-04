@@ -78,17 +78,17 @@ def __check_user_info(username, password_1, password_2, email, phone, age, city,
 def register(request):
     """
     注册用户, 只接受POST請求, Body所需的json字段為:\n
-    **必填項**\n
+    **# 必填項**\n
     'username': 用戶名\n
     'password_1': 密碼\n
     'password_2': 密碼確認\n
     'email': Email\n
-    **非必填項**\n
+    **# 非必填項**\n
     'phone': 手機號碼\n
     'age': 年齡\n
     'city': 城市\n
     'address': 地址\n
-    'introduction': 簡介\n
+    'introduction': 簡介
 
     :param request: WSGIRequest
     :return: JsonResponse
@@ -127,7 +127,7 @@ def login(request):
     """
     用户登录, 只接受POST請求, Body所需的json字段為:\n
     'username': 用戶名\n
-    'password': 密碼\n
+    'password': 密碼
 
     :param request: WSGIRequest
     :return: JsonResponse
@@ -237,8 +237,23 @@ def get_user_info(request):
 @csrf_exempt
 def update_user_info(request):
     """
-    更新用户信息, 只接受POST請求, Body所需的json字段為:\n
+    更新目前登入的用户信息, 只接受POST請求, Body所需的json字段為:\n
+    **# 以下所有的字段都是非必填的, 要改哪個填哪個**\n
+    'username': 用戶名\n
+    'is_admin': 是否為管理員\n
+    'is_banned': 是否被封禁\n
+    'email': 電子郵件\n
+    'phone': 電話號碼\n
+    'age': 年齡\n
+    'city': 城市\n
+    'address': 地址\n
+    'introduction': 簡介
 
+    **# 需要注意的是如需修改密碼需要提供原密碼且正確才能修改**\n
+    **# 如果需要修改密碼, 則必填以下項**\n
+    'old_password': 原密碼\n
+    'password_1': 新密碼\n
+    'password_2': 確認新密碼
 
     :param request:
     :return:

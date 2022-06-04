@@ -197,8 +197,8 @@ def get_user_info_by_user_id(request):
     根据用户ID获取用户信息, 只接受GET請求, Params格式為:\n
     ?user_id=要查詢的用戶ID
 
-    :param request:
-    :return:
+    :param request: WSGIRequest
+    :return: JsonResponse
     """
     if request.method == 'GET':
         user_id = request.GET.get('user_id')
@@ -255,8 +255,8 @@ def update_user_info(request):
     'password_1': 新密碼\n
     'password_2': 確認新密碼
 
-    :param request:
-    :return:
+    :param request: WSGIRequest
+    :return: JsonResponse
     """
     if request.session.get('user_id') is None:
         return JsonResponse({'errno': 912, 'msg': '用戶未登入'})

@@ -12,6 +12,7 @@ class User(models.Model):
     is_banned = models.BooleanField(default=False)
     email = models.EmailField(max_length=254)
     phone = models.CharField(max_length=20, blank=True)
+    age = models.IntegerField(blank=True, null=True)
     city = models.CharField(max_length=50, blank=True)
     address = models.CharField(max_length=100, blank=True)
     introduction = models.TextField(blank=True)

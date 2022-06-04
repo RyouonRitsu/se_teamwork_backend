@@ -7,6 +7,8 @@ import re
 # Create your views here.
 
 """
+調用方法:
+    前端發送GET或POST請求到/publish/函數名, 並添加相應的Params或Body(data使用鍵值對形式), 即可獲得包含相應信息的響應返回
 errno:
     0:      [成功]
     901:    請求方式錯誤, 只接受POST請求
@@ -77,7 +79,7 @@ def __check_user_info(username, password_1, password_2, email, phone, age, city,
 @csrf_exempt
 def register(request):
     """
-    注册用户, 只接受POST請求, Body所需的json字段為:\n
+    注册用户, 只接受POST請求, Body所需的字段為:\n
     **# 必填項**\n
     'username': 用戶名\n
     'password_1': 密碼\n
@@ -125,7 +127,7 @@ def register(request):
 @csrf_exempt
 def login(request):
     """
-    用户登录, 只接受POST請求, Body所需的json字段為:\n
+    用户登录, 只接受POST請求, Body所需的字段為:\n
     'username': 用戶名\n
     'password': 密碼
 
@@ -237,7 +239,7 @@ def get_user_info(request):
 @csrf_exempt
 def update_user_info(request):
     """
-    更新目前登入的用户信息, 只接受POST請求, Body所需的json字段為:\n
+    更新目前登入的用户信息, 只接受POST請求, Body所需的字段為:\n
     **# 以下所有的字段都是非必填的, 要改哪個填哪個**\n
     'username': 用戶名\n
     'is_admin': 是否為管理員\n

@@ -30,7 +30,7 @@ errno:
 
 def __check_user_info(username, password_1, password_2, email, phone, age, city, address, skip_check_duplicates=False):
     """
-    檢查用戶資訊是否合法, 並返回錯誤代碼, 合法返回0, 否則返回-1, 私有函數, 不可在外部調用, 可忽略
+    檢查用戶資訊是否合法, 並返回錯誤代碼和jsonResponse, 合法返回0, 否則返回-1, 私有函數, 不可在外部調用, 此函數可忽略
 
     :param username: str
     :param password_1: str

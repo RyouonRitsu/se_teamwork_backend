@@ -258,6 +258,7 @@ def update_user_info(request):
         password_1 = request.POST.get('password_1')
         password_2 = request.POST.get('password_2')
         user = User.objects.get(user_id=user_id)
+        name_no_need_to_change = True if info['username'] is None else False
         for key in info:
             if len(str(info[key])) == 0 or info[key] is None:
                 info[key] = user.__dict__[key]
@@ -274,7 +275,7 @@ def update_user_info(request):
                     info['age'],
                     info['city'],
                     info['address'],
-                    skip_check_duplicates=True
+                    skip_check_duplicates=name_no_need_to_change
                 )
                 if code < 0:
                     return msg
@@ -301,7 +302,7 @@ def update_user_info(request):
                 info['age'],
                 info['city'],
                 info['address'],
-                skip_check_duplicates=True
+                skip_check_duplicates=name_no_need_to_change
             )
             if code < 0:
                 return msg

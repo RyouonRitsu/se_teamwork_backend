@@ -17,7 +17,7 @@ class Book(models.Model):
     page_number = models.IntegerField(blank=True, null=True)
     price = models.DecimalField(max_digits=11, decimal_places=2)
     score = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
-    heat = models.IntegerField(blank=True, null=True)
+    heat = models.IntegerField(default=0)
 
     def __str__(self):
         return f'{self.ISBN}: {self.name}'

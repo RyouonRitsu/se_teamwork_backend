@@ -40,10 +40,12 @@ errno:
     940:    價格不合法
     941:    評分不合法
     942:    書籍不存在
+    943:    熱門度不合法
 """
 
 
-def __check_book_info(isbn, name, cover, book_type, author, author_country, press, published_date, price, score):
+def __check_book_info(isbn, name, cover, book_type, author, author_country, press, published_date, price, score, heat,
+                      skip_check_duplicates=False):
     """
     檢查書籍信息是否合法, 並返回錯誤代碼和jsonResponse, 合法返回0, 否則返回-1, 私有函數, 不可在外部調用, 此函數可忽略
 
@@ -57,6 +59,8 @@ def __check_book_info(isbn, name, cover, book_type, author, author_country, pres
     :param published_date: str
     :param price: str
     :param score: str
+    :param heat: str
+    :param skip_check_duplicates: bool = False
     :return: tuple(code: int, msg: JsonResponse | None)
     """
     if isbn is None or name is None or cover is None or book_type is None or author is None or press is None or \
@@ -65,6 +69,8 @@ def __check_book_info(isbn, name, cover, book_type, author, author_country, pres
             len(str(published_date)) == 0 or len(str(price)) == 0:
         return -1, JsonResponse({'errno': 911, 'msg': '必填字段為空'})
     try:
+        if skip_check_duplicates:
+            raise Book.DoesNotExist()
         _ = Book.objects.get(ISBN=isbn)
         return -1, JsonResponse({'errno': 931, 'msg': 'ISBN已存在'})
     except Book.DoesNotExist:
@@ -90,6 +96,8 @@ def __check_book_info(isbn, name, cover, book_type, author, author_country, pres
             return -1, JsonResponse({'errno': 940, 'msg': '價格不合法'})
         if score != '' and score is not None and (float(score) < 0 or float(score) > 10):
             return -1, JsonResponse({'errno': 941, 'msg': '評分不合法'})
+        if heat != '' and heat is not None and int(heat) < 0:
+            return -1, JsonResponse({'errno': 943, 'msg': '熱門度不合法'})
         return 0, None
 
 
@@ -131,7 +139,7 @@ def add_book(request):
         score = request.POST.get('score')
         heat = request.POST.get('heat')
         code, msg = __check_book_info(
-            isbn, name, cover, book_type, author, author_country, press, published_date, price, score
+            isbn, name, cover, book_type, author, author_country, press, published_date, price, score, heat
         )
         if code < 0:
             return msg
@@ -177,3 +185,106 @@ def delete_book(request):
             return JsonResponse({'errno': 942, 'msg': '書籍不存在'})
     else:
         return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST請求'})
+
+
+@csrf_exempt
+def update_book_info(request):
+    """
+    更新指定ISBN號的對應書籍信息, 只接受POST請求, Body所需的字段為:\n
+    'ISBN': ISBN\n
+    **# 以下所有的字段都是非必填的, 要改哪個填哪個**\n
+    'name': 書名\n
+    'cover': 封面地址url\n
+    'introduction': 簡介\n
+    'book_type': 書籍類型\n
+    'author': 作者姓名\n
+    'author_country': 作者國籍\n
+    'press': 出版社名\n
+    'published_date': 出版日期(格式: YYYY-MM-DD)\n
+    'page_number': 頁數\n
+    'price': 價格\n
+    'score': 評分\n
+    'heat': 熱門度
+
+    :param request:
+    :return:
+    """
+    if request.method == 'POST':
+        isbn = request.POST.get('ISBN')
+        if isbn is None or len(str(isbn)) == 0:
+            return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
+        try:
+            book = Book.objects.get(ISBN=isbn)
+        except Book.DoesNotExist:
+            return JsonResponse({'errno': 942, 'msg': '書籍不存在'})
+        info = {
+            'name': request.POST.get('name'),
+            'cover': request.POST.get('cover'),
+            'introduction': request.POST.get('introduction'),
+            'book_type': request.POST.get('book_type'),
+            'author': request.POST.get('author'),
+            'author_country': request.POST.get('author_country'),
+            'press': request.POST.get('press'),
+            'published_date': request.POST.get('published_date'),
+            'page_number': request.POST.get('page_number'),
+            'price': request.POST.get('price'),
+            'score': request.POST.get('score'),
+            'heat': request.POST.get('heat')
+        }
+        for key in info:
+            if len(str(info[key])) == 0 or info[key] is None:
+                info[key] = book.__dict__[key]
+        code, msg = __check_book_info(
+            isbn,
+            info['name'],
+            info['cover'],
+            info['book_type'],
+            info['author'],
+            info['author_country'],
+            info['press'],
+            info['published_date'],
+            info['price'],
+            info['score'],
+            info['heat'],
+            skip_check_duplicates=True
+        )
+        if code < 0:
+            return msg
+        book.name = info['name']
+        book.cover = info['cover']
+        book.introduction = info['introduction']
+        book.book_type = info['book_type']
+        book.author = info['author']
+        book.author_country = info['author_country']
+        book.press = info['press']
+        book.published_date = date.fromisoformat(info['published_date'])
+        book.page_number = info['page_number']
+        book.price = info['price']
+        book.score = info['score']
+        book.heat = info['heat']
+        book.save()
+        return JsonResponse({'errno': 0, 'msg': '更新成功'})
+    else:
+        return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST請求'})
+
+
+@csrf_exempt
+def get_book_info(request):
+    """
+    取得指定ISBN號的對應書籍信息, 只接受GET請求, Params格式為:\n
+    ?ISBN=要查詢的ISBN號
+
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+    if request.method == 'GET':
+        isbn = request.GET.get('ISBN')
+        if isbn is None or len(str(isbn)) == 0:
+            return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
+        try:
+            book = Book.objects.get(ISBN=isbn)
+            return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': book.to_dict()})
+        except Book.DoesNotExist:
+            return JsonResponse({'errno': 942, 'msg': '書籍不存在'})
+    else:
+        return JsonResponse({'errno': 916, 'msg': '請求方式錯誤, 只接受GET請求'})

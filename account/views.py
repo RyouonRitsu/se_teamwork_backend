@@ -188,9 +188,9 @@ def get_user_info(request):
         user_id = request.GET.get('user_id')
         session_user_id = request.session.get('user_id')
         status = 0
-        if len(str(username)) != 0:
+        if len(str(username)) != 0 and username is not None:
             status = 1
-        elif len(str(user_id)) != 0:
+        elif len(str(user_id)) != 0 and user_id is not None:
             status = 2
         elif session_user_id is not None:
             status = 3

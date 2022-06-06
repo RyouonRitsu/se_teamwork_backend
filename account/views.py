@@ -27,6 +27,7 @@ errno:
     914:    密碼錯誤
     915:    年齡不合法
     916:    請求方式錯誤, 只接受GET請求
+    917:    用戶未登入, 且沒有提供任何可供查詢的字段
 """
 
 
@@ -172,63 +173,38 @@ def logout(request):
 
 
 @csrf_exempt
-def get_user_info_by_username(request):
+def get_user_info(request):
     """
-    根据用户名获取用户信息, 只接受GET請求, Params格式為:\n
-    ?username=要查詢的用戶名
+    获取用户信息, 只接受GET請求, Params格式為(選擇其一即可):\n
+    ?username=要查詢的用戶名\n
+    ?user_id=要查詢的用戶ID\n
+    **若以上字段均未提供, 則會查詢當前已登入的用戶信息**
 
     :param request: WSGIRequest
     :return: JsonResponse
     """
     if request.method == 'GET':
         username = request.GET.get('username')
-        if len(str(username)) == 0:
-            return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
-        try:
-            user = User.objects.get(username=username)
-            return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': user.to_dict()})
-        except User.DoesNotExist:
-            return JsonResponse({'errno': 906, 'msg': '用戶不存在'})
-    else:
-        return JsonResponse({'errno': 916, 'msg': '請求方式錯誤, 只接受GET請求'})
-
-
-@csrf_exempt
-def get_user_info_by_user_id(request):
-    """
-    根据用户ID获取用户信息, 只接受GET請求, Params格式為:\n
-    ?user_id=要查詢的用戶ID
-
-    :param request: WSGIRequest
-    :return: JsonResponse
-    """
-    if request.method == 'GET':
         user_id = request.GET.get('user_id')
-        if len(str(user_id)) == 0:
-            return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
+        session_user_id = request.session.get('user_id')
+        status = 0
+        if len(str(username)) != 0:
+            status = 1
+        elif len(str(user_id)) != 0:
+            status = 2
+        elif session_user_id is not None:
+            status = 3
         try:
-            user = User.objects.get(user_id=user_id)
-            return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': user.to_dict()})
-        except User.DoesNotExist:
-            return JsonResponse({'errno': 906, 'msg': '用戶不存在'})
-    else:
-        return JsonResponse({'errno': 916, 'msg': '請求方式錯誤, 只接受GET請求'})
-
-
-@csrf_exempt
-def get_user_info(request):
-    """
-    获取用户信息, 只接受GET請求, Params為空
-
-    :param request: WSGIRequest
-    :return: JsonResponse
-    """
-    if request.session.get('user_id') is None:
-        return JsonResponse({'errno': 912, 'msg': '用戶未登入'})
-    if request.method == 'GET':
-        user_id = request.session.get('user_id')
-        try:
-            user = User.objects.get(user_id=user_id)
+            user = None
+            match status:
+                case 0:
+                    return JsonResponse({'errno': 917, 'msg': '用戶未登入, 且沒有提供任何可供查詢的字段'})
+                case 1:
+                    user = User.objects.get(username=username)
+                case 2:
+                    user = User.objects.get(user_id=user_id)
+                case 3:
+                    user = User.objects.get(user_id=session_user_id)
             return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': user.to_dict()})
         except User.DoesNotExist:
             return JsonResponse({'errno': 906, 'msg': '用戶不存在'})
@@ -239,8 +215,9 @@ def get_user_info(request):
 @csrf_exempt
 def update_user_info(request):
     """
-    更新目前登入的用户信息, 只接受POST請求, Body所需的字段為:\n
+    更新用户信息, 只接受POST請求, Body所需的字段為:\n
     **# 以下所有的字段都是非必填的, 要改哪個填哪個**\n
+    'user_id': 用戶ID(**若該項為空, 則修改目前已登入的用戶信息**)\n
     'username': 用戶名\n
     'is_admin': 是否為管理員\n
     'is_banned': 是否被封禁\n
@@ -260,10 +237,12 @@ def update_user_info(request):
     :param request: WSGIRequest
     :return: JsonResponse
     """
-    if request.session.get('user_id') is None:
-        return JsonResponse({'errno': 912, 'msg': '用戶未登入'})
     if request.method == 'POST':
-        user_id = request.session.get('user_id')
+        user_id = request.POST.get('user_id')
+        if user_id is None or len(str(user_id)) == 0:
+            user_id = request.session.get('user_id')
+        if user_id is None:
+            return JsonResponse({'errno': 917, 'msg': '用戶未登入, 且沒有提供任何可供查詢的字段'})
         info = {
             'username': request.POST.get('username'),
             'is_admin': request.POST.get('is_admin'),

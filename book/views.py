@@ -39,6 +39,7 @@ errno:
     939:    出版日期不合法
     940:    價格不合法
     941:    評分不合法
+    942:    書籍不存在
 """
 
 
@@ -151,5 +152,28 @@ def add_book(request):
         )
         new_book.save()
         return JsonResponse({'errno': 0, 'msg': '添加成功'})
+    else:
+        return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST請求'})
+
+
+@csrf_exempt
+def delete_book(request):
+    """
+    刪除書籍, 只接受POST請求, Body所需的字段為:\n
+    **# 必填項**\n
+    'ISBN': ISBN
+
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+    if request.method == 'POST':
+        isbn = request.POST.get('ISBN')
+        if isbn is None or len(str(isbn)) == 0:
+            return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
+        try:
+            Book.objects.get(ISBN=isbn).delete()
+            return JsonResponse({'errno': 0, 'msg': '刪除成功'})
+        except Book.DoesNotExist:
+            return JsonResponse({'errno': 942, 'msg': '書籍不存在'})
     else:
         return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST請求'})

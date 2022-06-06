@@ -155,9 +155,10 @@ def add_book(request):
             published_date=date.fromisoformat(published_date),
             page_number=page_number,
             price=price,
-            score=score,
-            heat=heat
+            score=score
         )
+        if heat is not None and heat != '':
+            new_book.heat = heat
         new_book.save()
         return JsonResponse({'errno': 0, 'msg': '添加成功'})
     else:

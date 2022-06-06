@@ -27,7 +27,7 @@ errno:
     914:    密碼錯誤
     915:    年齡不合法
     916:    請求方式錯誤, 只接受GET請求
-    917:    用戶未登入, 且沒有提供任何可供查詢的字段
+    917:    用戶未登入, 且未提供任何可供查詢的字段
 """
 
 
@@ -198,7 +198,7 @@ def get_user_info(request):
             user = None
             match status:
                 case 0:
-                    return JsonResponse({'errno': 917, 'msg': '用戶未登入, 且沒有提供任何可供查詢的字段'})
+                    return JsonResponse({'errno': 917, 'msg': '用戶未登入, 且未提供任何可供查詢的字段'})
                 case 1:
                     user = User.objects.get(username=username)
                 case 2:
@@ -242,7 +242,7 @@ def update_user_info(request):
         if user_id is None or len(str(user_id)) == 0:
             user_id = request.session.get('user_id')
         if user_id is None:
-            return JsonResponse({'errno': 917, 'msg': '用戶未登入, 且沒有提供任何可供查詢的字段'})
+            return JsonResponse({'errno': 917, 'msg': '用戶未登入, 且未提供任何可供查詢的字段'})
         info = {
             'username': request.POST.get('username'),
             'is_admin': request.POST.get('is_admin'),

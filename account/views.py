@@ -140,7 +140,7 @@ def login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        if len(str(username)) == 0 or len(str(password)) == 0:
+        if username is None or password is None or len(str(username)) == 0 or len(str(password)) == 0:
             return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
         try:
             user = User.objects.get(username=username)
@@ -162,6 +162,7 @@ def login_required(func):
         if request.session.get('user_id') is None:
             return JsonResponse({'errno': 912, 'msg': '用戶未登入'})
         return func(request, *args, **kwargs)
+
     return wrapper
 
 

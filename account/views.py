@@ -114,7 +114,7 @@ def register(request):
             password=password_1,
             email=email,
             phone=phone if phone is not None else '',
-            age=age,
+            age=age if age != '' else None,
             city=city if city is not None else '',
             address=address if address is not None else '',
             introduction=introduction if introduction is not None else ''

@@ -57,24 +57,26 @@ def __check_user_info(username, password_1, password_2, email, phone, age, city,
     except User.DoesNotExist:
         if re.match('.*\\W+.*', str(username)) is not None or len(str(username)) > 30:
             return -1, JsonResponse({'errno': 903, 'msg': '用戶名不合法'})
-        elif password_1 != password_2:
+        if password_1 != password_2:
             return -1, JsonResponse({'errno': 902, 'msg': '兩次輸入的密碼不一致'})
-        elif len(str(password_1)) < 8 or len(str(password_1)) > 18 or \
+        if len(str(password_1)) < 8 or len(str(password_1)) > 18 or \
                 re.match('.*\\d+.*', str(password_1)) is None or \
                 re.match('.*[a-zA-Z]+.*', str(password_1)) is None:
             return -1, JsonResponse({'errno': 905, 'msg': '密碼不合法'})
-        elif len(str(email)) > 254 or re.match('[\\w.]+@[\\w.]+', str(email)) is None:
+        if len(str(email)) > 254 or re.match('[\\w.]+@[\\w.]+', str(email)) is None:
             return -1, JsonResponse({'errno': 907, 'msg': 'Email不合法'})
-        elif phone != '' and phone is not None and \
+        if phone != '' and phone is not None and \
                 (len(str(phone)) != 11 or re.match('.*\\D+.*', str(phone)) is not None):
             return -1, JsonResponse({'errno': 908, 'msg': '手機號碼不合法'})
-        elif age != '' and age is not None and (int(age) < 0 or int(age) > 150):
+        try:
+            if age != '' and age is not None and (int(age) < 0 or int(age) > 150):
+                return -1, JsonResponse({'errno': 915, 'msg': '年齡不合法'})
+        except ValueError:
             return -1, JsonResponse({'errno': 915, 'msg': '年齡不合法'})
-        elif (city != '' and city is not None and len(str(city)) > 50) or \
+        if (city != '' and city is not None and len(str(city)) > 50) or \
                 (address != '' and address is not None and len(str(address)) > 100):
             return -1, JsonResponse({'errno': 909, 'msg': '城市或地址不合法'})
-        else:
-            return 0, None
+        return 0, None
 
 
 @csrf_exempt

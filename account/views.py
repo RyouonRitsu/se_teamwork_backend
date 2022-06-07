@@ -175,8 +175,6 @@ def logout(request):
     :return: JsonResponse
     """
     if request.method == 'POST':
-        if request.session.get('user_id') is None:
-            return JsonResponse({'errno': 912, 'msg': '用戶未登入'})
         request.session.flush()
         return JsonResponse({'errno': 0, 'msg': '註銷成功'})
     else:

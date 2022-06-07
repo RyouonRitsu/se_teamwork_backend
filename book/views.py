@@ -45,6 +45,7 @@ errno:
     943:    熱門度不合法
     944:    頁數不合法
     945:    您沒有權限執行此操作
+    946:    找不到符合條件的結果
 """
 
 
@@ -307,22 +308,80 @@ def update_book_info(request):
 
 
 @csrf_exempt
-def get_book_info(request):
+def get_book_info_by_key(request):
     """
-    取得指定ISBN號的對應書籍信息, 只接受GET請求, Params格式為:\n
-    ?ISBN=要查詢的ISBN號
+    取得指定屬性同時包含指定關鍵詞的信息的對應書籍信息, 只接受GET請求, Params格式為:\n
+    ?屬性名=關鍵詞[&...]
 
     :param request: WSGIRequest
     :return: JsonResponse
     """
+
+    def __search(__info, obj):
+        for key in [key for key in __info if __info[key] is not None and __info[key] != '']:
+            if __info[key] not in obj.__dict__[key]:
+                return False
+        return True
+
     if request.method == 'GET':
-        isbn = request.GET.get('ISBN')
-        if isbn is None or len(str(isbn)) == 0:
+        info = {
+            'ISBN': request.GET.get('ISBN'),
+            'name': request.GET.get('name'),
+            'cover': request.GET.get('cover'),
+            'introduction': request.GET.get('introduction'),
+            'book_type': request.GET.get('book_type'),
+            'author': request.GET.get('author'),
+            'author_country': request.GET.get('author_country'),
+            'press': request.GET.get('press'),
+            'published_date': request.GET.get('published_date'),
+            'page_number': request.GET.get('page_number'),
+            'price': request.GET.get('price'),
+            'score': request.GET.get('score'),
+            'heat': request.GET.get('heat')
+        }
+        if not any(info.values()):
             return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
-        try:
-            book = Book.objects.get(ISBN=isbn)
-            return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': book.to_dict()})
-        except Book.DoesNotExist:
-            return JsonResponse({'errno': 942, 'msg': '書籍不存在'})
+        books = list(filter(lambda x: __search(info, x), Book.objects.all()))
+        if len(books) == 0:
+            return JsonResponse({'errno': 946, 'msg': '找不到符合條件的結果'})
+        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), books))})
+    else:
+        return JsonResponse({'errno': 916, 'msg': '請求方式錯誤, 只接受GET請求'})
+
+
+@csrf_exempt
+def get_book_info(request):
+    """
+    根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分割\n
+    只要滿足屬性中同時包含所有關鍵字的書籍都會被選出\n
+    如果提供的keyword為空則默認返回所有書籍的信息\n
+    只接受GET請求, Params格式為:\n
+    ?keyword=value1[,value2,...]
+
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+
+    def __search(__keywords, obj):
+        _ = obj.to_dict()
+        for key in _:
+            for __keyword in __keywords:
+                if __keyword not in str(_[key]):
+                    break
+            else:
+                return True
+        return False
+
+    if request.method == 'GET':
+        keyword = request.GET.get('keyword')
+        if keyword is None or keyword == '':
+            return JsonResponse(
+                {'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), Book.objects.all()))}
+            )
+        keywords = str(keyword).split(',')
+        books = list(filter(lambda x: __search(keywords, x), Book.objects.all()))
+        if len(books) == 0:
+            return JsonResponse({'errno': 946, 'msg': '找不到符合條件的結果'})
+        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), books))})
     else:
         return JsonResponse({'errno': 916, 'msg': '請求方式錯誤, 只接受GET請求'})

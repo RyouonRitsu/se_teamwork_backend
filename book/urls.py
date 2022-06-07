@@ -7,5 +7,6 @@ urlpatterns = [
     path('add_book', add_book),
     path('delete_book', delete_book),
     path('update_book_info', update_book_info),
+    path('get_book_info_by_key', get_book_info_by_key),
     path('get_book_info', get_book_info)
 ]

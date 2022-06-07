@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'account.apps.AccountConfig',
+    'book.apps.BookConfig',
     'main_page.apps.MainPageConfig',
     'corsheaders'
 ]

@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from book.models import *
 from datetime import date
+from account.views import login_required
 
 # Create your views here.
 
@@ -41,11 +42,12 @@ errno:
     941:    評分不合法
     942:    書籍不存在
     943:    熱門度不合法
+    944:    頁數不合法
 """
 
 
-def __check_book_info(isbn, name, cover, book_type, author, author_country, press, published_date, price, score, heat,
-                      skip_check_duplicates=False):
+def __check_book_info(isbn, name, cover, book_type, author, author_country, press, published_date, page_number, price,
+                      score, heat, skip_check_duplicates=False):
     """
     檢查書籍信息是否合法, 並返回錯誤代碼和jsonResponse, 合法返回0, 否則返回-1, 私有函數, 不可在外部調用, 此函數可忽略
 
@@ -57,6 +59,7 @@ def __check_book_info(isbn, name, cover, book_type, author, author_country, pres
     :param author_country: str
     :param press: str
     :param published_date: str
+    :param page_number: str
     :param price: str
     :param score: str
     :param heat: str
@@ -89,14 +92,28 @@ def __check_book_info(isbn, name, cover, book_type, author, author_country, pres
         if len(str(press)) > 50:
             return -1, JsonResponse({'errno': 938, 'msg': '出版社名過長'})
         try:
-            _ = date.fromisoformat(published_date)
+            date.fromisoformat(published_date)
         except ValueError:
             return -1, JsonResponse({'errno': 939, 'msg': '出版日期不合法'})
-        if float(price) < 0:
+        try:
+            if page_number != '' and page_number is not None and int(page_number) <= 0:
+                return -1, JsonResponse({'errno': 944, 'msg': '頁數不合法'})
+        except ValueError:
+            return -1, JsonResponse({'errno': 944, 'msg': '頁數不合法'})
+        try:
+            if float(price) < 0:
+                return -1, JsonResponse({'errno': 940, 'msg': '價格不合法'})
+        except ValueError:
             return -1, JsonResponse({'errno': 940, 'msg': '價格不合法'})
-        if score != '' and score is not None and (float(score) < 0 or float(score) > 10):
+        try:
+            if score != '' and score is not None and (float(score) < 0 or float(score) > 10):
+                return -1, JsonResponse({'errno': 941, 'msg': '評分不合法'})
+        except ValueError:
             return -1, JsonResponse({'errno': 941, 'msg': '評分不合法'})
-        if heat != '' and heat is not None and int(heat) < 0:
+        try:
+            if heat != '' and heat is not None and int(heat) < 0:
+                return -1, JsonResponse({'errno': 943, 'msg': '熱門度不合法'})
+        except ValueError:
             return -1, JsonResponse({'errno': 943, 'msg': '熱門度不合法'})
         return 0, None
 
@@ -139,7 +156,7 @@ def add_book(request):
         score = request.POST.get('score')
         heat = request.POST.get('heat')
         code, msg = __check_book_info(
-            isbn, name, cover, book_type, author, author_country, press, published_date, price, score, heat
+            isbn, name, cover, book_type, author, author_country, press, published_date, page_number, price, score, heat
         )
         if code < 0:
             return msg
@@ -153,9 +170,9 @@ def add_book(request):
             author_country=author_country if author_country is not None else '',
             press=press,
             published_date=date.fromisoformat(published_date),
-            page_number=page_number,
+            page_number=page_number if page_number != '' else None,
             price=price,
-            score=score
+            score=score if score != '' else None
         )
         if heat is not None and heat != '':
             new_book.heat = heat
@@ -244,6 +261,7 @@ def update_book_info(request):
             info['author_country'],
             info['press'],
             info['published_date'],
+            info['page_number'],
             info['price'],
             info['score'],
             info['heat'],

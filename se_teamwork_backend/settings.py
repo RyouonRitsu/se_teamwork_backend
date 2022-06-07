@@ -134,7 +134,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # session 配置
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # 引擎（默认）
-SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True  # 是否Https传输cookie
 SESSION_COOKIE_DOMAIN = None  # Session的cookie保存的域名（默认）
 SESSION_COOKIE_HTTPONLY = False  # 是否Session的cookie只⽀持http传输（默认）

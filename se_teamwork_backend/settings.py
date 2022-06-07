@@ -129,3 +129,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# session 配置
+SESSION_ENGINE = 'django.contrib.sessions.backends.db' # 引擎（默认）
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True  # 是否Https传输cookie
+SESSION_COOKIE_DOMAIN = None  # Session的cookie保存的域名（默认）
+SESSION_COOKIE_HTTPONLY = False  # 是否Session的cookie只⽀持http传输（默认）
+SESSION_COOKIE_AGE = 60  # Session的cookie失效⽇期（1209600 2周 默认）
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # 是否关闭浏览器使得Session过期（False 默认）
+SESSION_SAVE_EVERY_REQUEST = False  # 是否每次请求都保存Session，默认修改之后才保存

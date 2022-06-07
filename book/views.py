@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from account.models import User
 from book.models import *
 from datetime import date
 from account.views import login_required
@@ -43,6 +44,7 @@ errno:
     942:    書籍不存在
     943:    熱門度不合法
     944:    頁數不合法
+    945:    您沒有權限執行此操作
 """
 
 
@@ -118,7 +120,20 @@ def __check_book_info(isbn, name, cover, book_type, author, author_country, pres
         return 0, None
 
 
+def admin_required(func):
+    def wrapper(request, *args, **kwargs):
+        user = User.objects.get(user_id=request.session.get('user_id'))
+        if user.is_admin:
+            return func(request, *args, **kwargs)
+        else:
+            return JsonResponse({'errno': 945, 'msg': '您沒有權限執行此操作'})
+
+    return wrapper
+
+
 @csrf_exempt
+@login_required
+@admin_required
 def add_book(request):
     """
     新增書籍, 只接受POST請求, Body所需的字段為:\n
@@ -183,6 +198,8 @@ def add_book(request):
 
 
 @csrf_exempt
+@login_required
+@admin_required
 def delete_book(request):
     """
     刪除書籍, 只接受POST請求, Body所需的字段為:\n
@@ -206,6 +223,8 @@ def delete_book(request):
 
 
 @csrf_exempt
+@login_required
+@admin_required
 def update_book_info(request):
     """
     更新指定ISBN號的對應書籍信息, 只接受POST請求, Body所需的字段為:\n

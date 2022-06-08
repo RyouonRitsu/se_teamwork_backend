@@ -350,7 +350,7 @@ def get_book_info_by_key(request, raw=False):
                 reverse = True
             else:
                 reverse = False
-            books.sort(key=lambda x: x.__dict__[sort_by], reverse=reverse)
+            books.sort(key=lambda x: (x.__dict__[sort_by], x.score, x.price, x.ISBN), reverse=reverse)
         if raw:
             return list(map(lambda x: x.to_dict(), books))
         if len(books) == 0:
@@ -404,7 +404,7 @@ def get_book_info(request, raw=False):
                 reverse = True
             else:
                 reverse = False
-            books.sort(key=lambda x: x.__dict__[sort_by], reverse=reverse)
+            books.sort(key=lambda x: (x.__dict__[sort_by], x.score, x.price, x.ISBN), reverse=reverse)
         if raw:
             return list(map(lambda x: x.to_dict(), books))
         if len(books) == 0:
@@ -426,6 +426,10 @@ def get_book_info_by_isbn(request, raw=False):
     """
     if request.method == 'GET':
         isbn = request.GET.get('ISBN')
+        if not isbn:
+            if raw:
+                return []
+            return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
         try:
             book = Book.objects.get(ISBN=isbn)
         except Book.DoesNotExist:

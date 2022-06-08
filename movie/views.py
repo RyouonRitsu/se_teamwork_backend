@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from account.models import User
 from movie.models import *
 from datetime import date
 from account.views import login_required
@@ -289,3 +288,142 @@ def update_movie_info(request):
     movie.save()
     return JsonResponse({'errno': 0, 'msg': '更新成功'})
 
+
+@csrf_exempt
+def get_movie_info_by_key(request, raw=False):
+    """
+    取得指定屬性同時包含指定關鍵詞的信息的對應影视信息, **可选** 根据关键字排序和选择升序降序(是否反转), 只接受GET請求, Params格式為:\n
+    ?屬性名=關鍵詞[&...][&sort_by=屬性名&reverse=(True or False)]
+
+    :param request: WSGIRequest
+    :param raw: bool = False, 是否返回原始数据
+    :return: JsonResponse
+    """
+
+    def __search(__info, obj):
+        for key in [key for key in __info if __info[key] is not None and __info[key] != '']:
+            if __info[key] not in obj.__dict__[key]:
+                return False
+        return True
+
+    if request.method != 'GET':
+        return JsonResponse({'errno': 916, 'msg': '请求方式错误, 只接受GET请求'})
+    info = {
+        'movie_id': request.GET.get('movie_id'),
+        'movie_name': request.GET.get('movie_name'),
+        'introduction': request.GET.get('introduction'),
+        'movie_form': request.GET.get('movie_form'),
+        'movie_type': request.GET.get('movie_type'),
+        'area': request.GET.get('area'),
+        'release_date': request.GET.get('release_date'),
+        'director': request.GET.get('director'),
+        'screenwriter': request.GET.get('screenwriter'),
+        'starring': request.GET.get('starring'),
+        'language': request.GET.get('language'),
+        'duration': request.GET.get('duration'),
+        'score': request.GET.get('score'),
+        'heat': request.GET.get('heat')
+    }
+    if not any(info.values()):
+        if raw:
+            return []
+        return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+    movies = list(filter(lambda x: __search(info, x), Movie.objects.all()))
+    sort_by = request.GET.get('sort_by')
+    reverse = request.GET.get('reverse')
+    if sort_by:
+        if sort_by not in Movie.__dict__:
+            return JsonResponse({'errno': 934, 'msg': '排序字段不存在'})
+        if reverse in ['True', 'true', 't', 'T', 'TRUE', '1', 'Yes', 'yes', 'YES', 'y', 'Y', '1']:
+            reverse = True
+        else:
+            reverse = False
+        movies.sort(key=lambda x: (x.__dict__[sort_by], x.score, x.movie_id), reverse=reverse)
+    if raw:
+        return list(map(lambda x: x.to_dict(), movies))
+    if len(movies) == 0:
+        return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
+    return JsonResponse({'errno': 0, 'msg': '查询成功', 'data': list(map(lambda x: x.to_dict(), movies))})
+
+
+@csrf_exempt
+def get_movie_info(request, raw=False):
+    """
+    根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分割\n
+    只要滿足屬性中同時包含所有關鍵字的影视都會被選出\n
+    如果提供的keyword為空則默認返回所有影视的信息\n
+    **可选** 根据关键字排序和选择升序降序(是否反转)\n
+    只接受GET請求, Params格式為:\n
+    ?keyword=value1[,value2,...][&sort_by=屬性名&reverse=(True or False)]
+
+    :param request: WSGIRequest
+    :param raw: bool = False, 是否返回原始数据
+    :return: JsonResponse
+    """
+
+    def __search(__keywords, obj):
+        _ = obj.to_dict()
+        for key in _:
+            for __keyword in __keywords:
+                if __keyword not in str(_[key]):
+                    break
+            else:
+                return True
+        return False
+
+    if request.method != 'GET':
+        return JsonResponse({'errno': 916, 'msg': '请求方式错误, 只接受GET请求'})
+    keyword = request.GET.get('keyword')
+    if not keyword:
+        if raw:
+            return list(map(lambda x: x.to_dict(), Movie.objects.all()))
+        return JsonResponse(
+            {'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), Movie.objects.all()))}
+        )
+    keywords = str(keyword).split(',')
+    movies = list(filter(lambda x: __search(keywords, x), Movie.objects.all()))
+    sort_by = request.GET.get('sort_by')
+    reverse = request.GET.get('reverse')
+    if sort_by:
+        if sort_by not in Movie.__dict__:
+            return JsonResponse({'errno': 934, 'msg': '排序字段不存在'})
+        if reverse in ['True', 'true', 't', 'T', 'TRUE', '1', 'Yes', 'yes', 'YES', 'y', 'Y', '1']:
+            reverse = True
+        else:
+            reverse = False
+        movies.sort(key=lambda x: (x.__dict__[sort_by], x.score, x.movie_id), reverse=reverse)
+    if raw:
+        return list(map(lambda x: x.to_dict(), movies))
+    if len(movies) == 0:
+        return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
+    return JsonResponse({'errno': 0, 'msg': '查询成功', 'data': list(map(lambda x: x.to_dict(), movies))})
+
+
+@csrf_exempt
+def get_movie_info_by_id(request, raw=False):
+    """
+    取得指定movie_id的影视信息, 並為熱度值+1, 只接受GET請求, Params格式為:\n
+    ?movie_id=要查询的影视ID
+
+    :param request: WSGIRequest
+    :param raw: bool = False, 是否返回原始数据
+    :return: JsonResponse
+    """
+    if request.method != 'GET':
+        return JsonResponse({'errno': 916, 'msg': '请求方式错误, 只接受GET请求'})
+    movie_id = request.GET.get('movie_id')
+    if not movie_id:
+        if raw:
+            return []
+        return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+    try:
+        movie = Movie.objects.get(movie_id=movie_id)
+    except Movie.DoesNotExist:
+        if raw:
+            return []
+        return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
+    movie.heat += 1
+    movie.save()
+    if raw:
+        return [movie.to_dict()]
+    return JsonResponse({'errno': 0, 'msg': '查询成功', 'data': [movie.to_dict()]})

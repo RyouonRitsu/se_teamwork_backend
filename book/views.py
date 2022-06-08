@@ -310,6 +310,7 @@ def get_book_info_by_key(request, raw=False):
     取得指定屬性同時包含指定關鍵詞的信息的對應書籍信息, **可选** 根据关键字排序和选择升序降序(是否反转), 只接受GET請求, Params格式為:\n
     ?屬性名=關鍵詞[&...][&sort_by=屬性名&reverse=(True or False)]
 
+    :param raw: bool = False, 是否返回原始数据
     :param request: WSGIRequest
     :return: JsonResponse
     """
@@ -367,6 +368,7 @@ def get_book_info(request, raw=False):
     只接受GET請求, Params格式為:\n
     ?keyword=value1[,value2,...][&sort_by=屬性名&reverse=(True or False)]
 
+    :param raw: bool = False, 是否返回原始数据
     :param request: WSGIRequest
     :return: JsonResponse
     """
@@ -414,6 +416,7 @@ def get_book_info_by_isbn(request, raw=False):
     取得指定ISBN號的書籍信息, 並為熱度值+1, 只接受GET請求, Params格式為:\n
     ?ISBN=書籍ISBN
 
+    :param raw: bool = False, 是否返回原始数据
     :param request: WSGIRequest
     :return: JsonResponse
     """

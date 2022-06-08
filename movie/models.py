@@ -18,6 +18,9 @@ class Movie(models.Model):
     starring = models.CharField(max_length=100)
     language = models.CharField(max_length=50)
     duration = models.IntegerField(blank=True, null=True)
+    score = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    heat = models.IntegerField(default=0)
+    movie_num_comments = models.IntegerField(default=0)
 
     def __str__(self):
         return f'{self.movie_id}: {self.movie_name}'

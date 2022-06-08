@@ -193,6 +193,7 @@ def get_user_info(request, raw=False):
     ?user_id=要查詢的用戶ID\n
     **若以上字段均未提供, 則會查詢當前已登入的用戶信息**
 
+    :param raw: bool = False, 是否返回原始数据
     :param request: WSGIRequest
     :return: JsonResponse
     """

@@ -119,6 +119,10 @@ def __check_book_info(isbn, book_name, book_type, author, author_country, press,
 
 
 def admin_required(func):
+    """
+    管理员权限验证装饰器
+    """
+
     def wrapper(request, *args, **kwargs):
         user = User.objects.get(user_id=request.session.get('user_id'))
         if user.is_admin:
@@ -345,6 +349,8 @@ def get_book_info_by_key(request, raw=False):
         reverse = request.GET.get('reverse')
         if sort_by is not None and sort_by != '':
             if sort_by not in Book.__dict__:
+                if raw:
+                    return []
                 return JsonResponse({'errno': 934, 'msg': '排序字段不存在'})
             if reverse in ['True', 'true', 't', 'T', 'TRUE', '1', 'Yes', 'yes', 'YES', 'y', 'Y', '1']:
                 reverse = True
@@ -364,7 +370,7 @@ def get_book_info_by_key(request, raw=False):
 @csrf_exempt
 def get_book_info(request, raw=False):
     """
-    根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分割\n
+    根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分隔\n
     只要滿足屬性中同時包含所有關鍵字的書籍都會被選出\n
     如果提供的keyword為空則默認返回所有書籍的信息\n
     **可选** 根据关键字排序和选择升序降序(是否反转)\n
@@ -379,6 +385,8 @@ def get_book_info(request, raw=False):
     def __search(__keywords, obj):
         _ = obj.to_dict()
         for key in _:
+            if key == 'book_cover':
+                continue
             for __keyword in __keywords:
                 if __keyword not in str(_[key]):
                     break
@@ -400,6 +408,8 @@ def get_book_info(request, raw=False):
         reverse = request.GET.get('reverse')
         if sort_by is not None and sort_by != '':
             if sort_by not in Book.__dict__:
+                if raw:
+                    return []
                 return JsonResponse({'errno': 934, 'msg': '排序字段不存在'})
             if reverse in ['True', 'true', 't', 'T', 'TRUE', '1', 'Yes', 'yes', 'YES', 'y', 'Y', '1']:
                 reverse = True

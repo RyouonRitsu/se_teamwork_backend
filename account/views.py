@@ -161,6 +161,7 @@ def login_required(func):
     """
     登入验证装饰器
     """
+
     def wrapper(request, *args, **kwargs):
         if request.session.get('user_id') is None:
             return JsonResponse({'errno': 912, 'msg': '用户未登录'})
@@ -201,8 +202,14 @@ def get_user_info(request, raw=False):
         username = request.GET.get('username')
         user_id = request.GET.get('user_id')
         session_user_id = request.session.get('user_id')
+        keyword = request.GET.get('keyword')
+        if not keyword:
+            if raw:
+                return []
         status = 0
-        if len(str(username)) != 0 and username is not None:
+        if keyword:
+            status = 4
+        elif len(str(username)) != 0 and username is not None:
             status = 1
         elif len(str(user_id)) != 0 and user_id is not None:
             status = 2
@@ -226,6 +233,14 @@ def get_user_info(request, raw=False):
                     user = User.objects.get(user_id=user_id)
                 case 3:
                     user = User.objects.get(user_id=session_user_id)
+                case 4:
+                    keywords = str(keyword).split(',')
+                    users = list(filter(lambda x: all(k in x.username for k in keywords), User.objects.all()))
+                    if raw:
+                        return list(map(lambda x: x.to_dict(), users))
+                    if len(users) == 0:
+                        raise User.DoesNotExist()
+                    return JsonResponse({'errno': 0, 'msg': '查询成功', 'data': list(map(lambda x: x.to_dict(), users))})
             if raw:
                 return [user.to_dict()]
             return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': [user.to_dict()]})

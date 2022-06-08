@@ -333,6 +333,8 @@ def get_movie_info_by_key(request, raw=False):
     reverse = request.GET.get('reverse')
     if sort_by:
         if sort_by not in Movie.__dict__:
+            if raw:
+                return []
             return JsonResponse({'errno': 934, 'msg': '排序字段不存在'})
         if reverse in ['True', 'true', 't', 'T', 'TRUE', '1', 'Yes', 'yes', 'YES', 'y', 'Y', '1']:
             reverse = True
@@ -349,7 +351,7 @@ def get_movie_info_by_key(request, raw=False):
 @csrf_exempt
 def get_movie_info(request, raw=False):
     """
-    根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分割\n
+    根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分隔\n
     只要滿足屬性中同時包含所有關鍵字的影视都會被選出\n
     如果提供的keyword為空則默認返回所有影视的信息\n
     **可选** 根据关键字排序和选择升序降序(是否反转)\n
@@ -386,6 +388,8 @@ def get_movie_info(request, raw=False):
     reverse = request.GET.get('reverse')
     if sort_by:
         if sort_by not in Movie.__dict__:
+            if raw:
+                return []
             return JsonResponse({'errno': 934, 'msg': '排序字段不存在'})
         if reverse in ['True', 'true', 't', 'T', 'TRUE', '1', 'Yes', 'yes', 'YES', 'y', 'Y', '1']:
             reverse = True

@@ -6,8 +6,8 @@ from django.db.models.fields.related import ManyToManyField
 # Create your models here.
 class Book(models.Model):
     ISBN = models.CharField(max_length=20, primary_key=True)
-    name = models.CharField(max_length=100)
-    cover = models.CharField(max_length=500)
+    book_name = models.CharField(max_length=100)
+    book_cover = models.CharField(max_length=500)
     introduction = models.TextField(blank=True)
     book_type = models.CharField(max_length=50)
     author = models.CharField(max_length=50)
@@ -18,9 +18,10 @@ class Book(models.Model):
     price = models.DecimalField(max_digits=11, decimal_places=2)
     score = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     heat = models.IntegerField(default=0)
+    book_num_comments = models.IntegerField(default=0)
 
     def __str__(self):
-        return f'{self.ISBN}: {self.name}'
+        return f'{self.ISBN}: {self.book_name}'
 
     def to_dict(self, fields=None, exclude=None):
         data = {}

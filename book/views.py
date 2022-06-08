@@ -140,8 +140,8 @@ def add_book(request):
     新增書籍, 只接受POST請求, Body所需的字段為:\n
     **# 必填項**\n
     'ISBN': ISBN\n
-    'name': 書名\n
-    'cover': 封面地址url\n
+    'book_name': 書名\n
+    'book_cover': 封面地址url\n
     'book_type': 書籍類型\n
     'author': 作者姓名\n
     'press': 出版社名\n
@@ -159,8 +159,8 @@ def add_book(request):
     """
     if request.method == 'POST':
         isbn = request.POST.get('ISBN')
-        name = request.POST.get('name')
-        cover = request.POST.get('cover')
+        name = request.POST.get('book_name')
+        cover = request.POST.get('book_cover')
         introduction = request.POST.get('introduction')
         book_type = request.POST.get('book_type')
         author = request.POST.get('author')
@@ -231,8 +231,8 @@ def update_book_info(request):
     更新指定ISBN號的對應書籍信息, 只接受POST請求, Body所需的字段為:\n
     'ISBN': ISBN\n
     **# 以下所有的字段都是非必填的, 要改哪個填哪個**\n
-    'name': 書名\n
-    'cover': 封面地址url\n
+    'book_name': 書名\n
+    'book_cover': 封面地址url\n
     'introduction': 簡介\n
     'book_type': 書籍類型\n
     'author': 作者姓名\n
@@ -256,8 +256,8 @@ def update_book_info(request):
         except Book.DoesNotExist:
             return JsonResponse({'errno': 942, 'msg': '书籍不存在'})
         info = {
-            'name': request.POST.get('name'),
-            'cover': request.POST.get('cover'),
+            'book_name': request.POST.get('book_name'),
+            'book_cover': request.POST.get('book_cover'),
             'introduction': request.POST.get('introduction'),
             'book_type': request.POST.get('book_type'),
             'author': request.POST.get('author'),
@@ -274,8 +274,8 @@ def update_book_info(request):
                 info[key] = book.__dict__[key]
         code, msg = __check_book_info(
             isbn,
-            info['name'],
-            info['cover'],
+            info['book_name'],
+            info['book_cover'],
             info['book_type'],
             info['author'],
             info['author_country'],
@@ -289,8 +289,8 @@ def update_book_info(request):
         )
         if code < 0:
             return msg
-        book.name = info['name']
-        book.cover = info['cover']
+        book.book_name = info['book_name']
+        book.book_cover = info['book_cover']
         book.introduction = info['introduction']
         book.book_type = info['book_type']
         book.author = info['author']
@@ -326,8 +326,8 @@ def get_book_info_by_key(request):
     if request.method == 'GET':
         info = {
             'ISBN': request.GET.get('ISBN'),
-            'name': request.GET.get('name'),
-            'cover': request.GET.get('cover'),
+            'book_name': request.GET.get('book_name'),
+            'book_cover': request.GET.get('book_cover'),
             'introduction': request.GET.get('introduction'),
             'book_type': request.GET.get('book_type'),
             'author': request.GET.get('author'),

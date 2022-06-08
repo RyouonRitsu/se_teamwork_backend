@@ -212,6 +212,8 @@ def get_user_info(request, raw=False):
             user = None
             match status:
                 case 0:
+                    if raw:
+                        return []
                     return JsonResponse({'errno': 917, 'msg': '用户未登录, 且未提供任何可供查询的字段'})
                 case 1:
                     users = list(filter(lambda x: username in x.username, User.objects.all()))

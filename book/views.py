@@ -337,6 +337,8 @@ def get_book_info_by_key(request, raw=False):
             'heat': request.GET.get('heat')
         }
         if not any(info.values()):
+            if raw:
+                return []
             return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
         books = list(filter(lambda x: __search(info, x), Book.objects.all()))
         sort_by = request.GET.get('sort_by')
@@ -386,6 +388,8 @@ def get_book_info(request, raw=False):
     if request.method == 'GET':
         keyword = request.GET.get('keyword')
         if keyword is None or keyword == '':
+            if raw:
+                return list(map(lambda x: x.to_dict(), Book.objects.all()))
             return JsonResponse(
                 {'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), Book.objects.all()))}
             )
@@ -425,6 +429,8 @@ def get_book_info_by_isbn(request, raw=False):
         try:
             book = Book.objects.get(ISBN=isbn)
         except Book.DoesNotExist:
+            if raw:
+                return []
             return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
         book.heat += 1
         book.save()

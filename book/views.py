@@ -13,39 +13,39 @@ from account.views import login_required
     前端發送GET或POST請求到/account/函數名, 並添加相應的Params或Body(data使用鍵值對形式), 即可獲得包含相應信息的響應返回
 errno:
     0:      [成功]
-    901:    請求方式錯誤, 只接受POST請求
-    902:    兩次輸入的密碼不一致
-    903:    用戶名不合法
-    904:    用戶名已存在
-    905:    密碼不合法
-    906:    用戶不存在
+    901:    请求方式错误, 只接受POST请求
+    902:    两次输入的密码不一致
+    903:    用户名不合法
+    904:    用户名已存在
+    905:    密码不合法
+    906:    用户不存在
     907:    Email不合法
-    908:    手機號碼不合法
+    908:    手机号码不合法
     909:    城市或地址不合法
-    910:    原密碼錯誤
-    911:    必填字段為空
-    912:    用戶未登入
-    913:    重複登入
-    914:    密碼錯誤
-    915:    年齡不合法
-    916:    請求方式錯誤, 只接受GET請求
-    917:    用戶未登入, 且未提供任何可供查詢的字段
+    910:    原密码错误
+    911:    必填字段为空
+    912:    用户未登录
+    913:    重复登录
+    914:    密码错误
+    915:    年龄不合法
+    916:    请求方式错误, 只接受GET请求
+    917:    用户未登录, 且未提供任何可供查询的字段
     931:    ISBN已存在
-    932:    ISBN過長
-    933:    書名過長
-    934:    封面地址過長
-    935:    書籍類型過長
-    936:    作者姓名過長
-    937:    作者國籍過長
-    938:    出版社名過長
+    932:    ISBN过长
+    933:    书名过长
+    934:    封面地址过长
+    935:    书籍类型过长
+    936:    作者姓名过长
+    937:    作者国籍过长
+    938:    出版社名过长
     939:    出版日期不合法
-    940:    價格不合法
-    941:    評分不合法
-    942:    書籍不存在
-    943:    熱門度不合法
-    944:    頁數不合法
-    945:    您沒有權限執行此操作
-    946:    找不到符合條件的結果
+    940:    价格不合法
+    941:    评分不合法
+    942:    书籍不存在
+    943:    热门度不合法
+    944:    页数不合法
+    945:    您没有权限执行此操作
+    946:    找不到符合条件的结果
 """
 
 
@@ -73,7 +73,7 @@ def __check_book_info(isbn, name, cover, book_type, author, author_country, pres
             published_date is None or price is None or len(str(isbn)) == 0 or len(str(name)) == 0 or \
             len(str(cover)) == 0 or len(str(book_type)) == 0 or len(str(author)) == 0 or len(str(press)) == 0 or \
             len(str(published_date)) == 0 or len(str(price)) == 0:
-        return -1, JsonResponse({'errno': 911, 'msg': '必填字段為空'})
+        return -1, JsonResponse({'errno': 911, 'msg': '必填字段为空'})
     try:
         if skip_check_duplicates:
             raise Book.DoesNotExist()
@@ -81,43 +81,43 @@ def __check_book_info(isbn, name, cover, book_type, author, author_country, pres
         return -1, JsonResponse({'errno': 931, 'msg': 'ISBN已存在'})
     except Book.DoesNotExist:
         if len(str(isbn)) > 20:
-            return -1, JsonResponse({'errno': 932, 'msg': 'ISBN過長'})
+            return -1, JsonResponse({'errno': 932, 'msg': 'ISBN过长'})
         if len(str(name)) > 100:
-            return -1, JsonResponse({'errno': 933, 'msg': '書名過長'})
+            return -1, JsonResponse({'errno': 933, 'msg': '书名过长'})
         if len(str(cover)) > 500:
-            return -1, JsonResponse({'errno': 934, 'msg': '封面地址過長'})
+            return -1, JsonResponse({'errno': 934, 'msg': '封面地址过长'})
         if len(str(book_type)) > 50:
-            return -1, JsonResponse({'errno': 935, 'msg': '書籍類型過長'})
+            return -1, JsonResponse({'errno': 935, 'msg': '书籍类型过长'})
         if len(str(author)) > 50:
-            return -1, JsonResponse({'errno': 936, 'msg': '作者姓名過長'})
+            return -1, JsonResponse({'errno': 936, 'msg': '作者姓名过长'})
         if author_country != '' and author_country is not None and len(str(author_country)) > 50:
-            return -1, JsonResponse({'errno': 937, 'msg': '作者國籍過長'})
+            return -1, JsonResponse({'errno': 937, 'msg': '作者国籍过长'})
         if len(str(press)) > 50:
-            return -1, JsonResponse({'errno': 938, 'msg': '出版社名過長'})
+            return -1, JsonResponse({'errno': 938, 'msg': '出版社名过长'})
         try:
             date.fromisoformat(published_date)
         except ValueError:
             return -1, JsonResponse({'errno': 939, 'msg': '出版日期不合法'})
         try:
             if page_number != '' and page_number is not None and int(page_number) <= 0:
-                return -1, JsonResponse({'errno': 944, 'msg': '頁數不合法'})
+                return -1, JsonResponse({'errno': 944, 'msg': '页数不合法'})
         except ValueError:
-            return -1, JsonResponse({'errno': 944, 'msg': '頁數不合法'})
+            return -1, JsonResponse({'errno': 944, 'msg': '页数不合法'})
         try:
             if float(price) < 0:
-                return -1, JsonResponse({'errno': 940, 'msg': '價格不合法'})
+                return -1, JsonResponse({'errno': 940, 'msg': '价格不合法'})
         except ValueError:
-            return -1, JsonResponse({'errno': 940, 'msg': '價格不合法'})
+            return -1, JsonResponse({'errno': 940, 'msg': '价格不合法'})
         try:
             if score != '' and score is not None and (float(score) < 0 or float(score) > 10):
-                return -1, JsonResponse({'errno': 941, 'msg': '評分不合法'})
+                return -1, JsonResponse({'errno': 941, 'msg': '评分不合法'})
         except ValueError:
-            return -1, JsonResponse({'errno': 941, 'msg': '評分不合法'})
+            return -1, JsonResponse({'errno': 941, 'msg': '评分不合法'})
         try:
             if heat != '' and heat is not None and int(heat) < 0:
-                return -1, JsonResponse({'errno': 943, 'msg': '熱門度不合法'})
+                return -1, JsonResponse({'errno': 943, 'msg': '热门度不合法'})
         except ValueError:
-            return -1, JsonResponse({'errno': 943, 'msg': '熱門度不合法'})
+            return -1, JsonResponse({'errno': 943, 'msg': '热门度不合法'})
         return 0, None
 
 
@@ -127,7 +127,7 @@ def admin_required(func):
         if user.is_admin:
             return func(request, *args, **kwargs)
         else:
-            return JsonResponse({'errno': 945, 'msg': '您沒有權限執行此操作'})
+            return JsonResponse({'errno': 945, 'msg': '您没有权限执行此操作'})
 
     return wrapper
 
@@ -195,7 +195,7 @@ def add_book(request):
         new_book.save()
         return JsonResponse({'errno': 0, 'msg': '添加成功'})
     else:
-        return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST請求'})
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
 
 
 @csrf_exempt
@@ -213,14 +213,14 @@ def delete_book(request):
     if request.method == 'POST':
         isbn = request.POST.get('ISBN')
         if isbn is None or len(str(isbn)) == 0:
-            return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
+            return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
         try:
             Book.objects.get(ISBN=isbn).delete()
             return JsonResponse({'errno': 0, 'msg': '刪除成功'})
         except Book.DoesNotExist:
-            return JsonResponse({'errno': 942, 'msg': '書籍不存在'})
+            return JsonResponse({'errno': 942, 'msg': '书籍不存在'})
     else:
-        return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST請求'})
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
 
 
 @csrf_exempt
@@ -250,11 +250,11 @@ def update_book_info(request):
     if request.method == 'POST':
         isbn = request.POST.get('ISBN')
         if isbn is None or len(str(isbn)) == 0:
-            return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
+            return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
         try:
             book = Book.objects.get(ISBN=isbn)
         except Book.DoesNotExist:
-            return JsonResponse({'errno': 942, 'msg': '書籍不存在'})
+            return JsonResponse({'errno': 942, 'msg': '书籍不存在'})
         info = {
             'name': request.POST.get('name'),
             'cover': request.POST.get('cover'),
@@ -304,7 +304,7 @@ def update_book_info(request):
         book.save()
         return JsonResponse({'errno': 0, 'msg': '更新成功'})
     else:
-        return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST請求'})
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
 
 
 @csrf_exempt
@@ -340,13 +340,13 @@ def get_book_info_by_key(request):
             'heat': request.GET.get('heat')
         }
         if not any(info.values()):
-            return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
+            return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
         books = list(filter(lambda x: __search(info, x), Book.objects.all()))
         if len(books) == 0:
-            return JsonResponse({'errno': 946, 'msg': '找不到符合條件的結果'})
+            return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), books))})
     else:
-        return JsonResponse({'errno': 916, 'msg': '請求方式錯誤, 只接受GET請求'})
+        return JsonResponse({'errno': 916, 'msg': '请求方式错误, 只接受GET请求'})
 
 
 @csrf_exempt
@@ -381,7 +381,7 @@ def get_book_info(request):
         keywords = str(keyword).split(',')
         books = list(filter(lambda x: __search(keywords, x), Book.objects.all()))
         if len(books) == 0:
-            return JsonResponse({'errno': 946, 'msg': '找不到符合條件的結果'})
+            return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), books))})
     else:
-        return JsonResponse({'errno': 916, 'msg': '請求方式錯誤, 只接受GET請求'})
+        return JsonResponse({'errno': 916, 'msg': '请求方式错误, 只接受GET请求'})

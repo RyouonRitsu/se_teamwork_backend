@@ -11,23 +11,23 @@ import re
     前端發送GET或POST請求到/account/函數名, 並添加相應的Params或Body(data使用鍵值對形式), 即可獲得包含相應信息的響應返回
 errno:
     0:      [成功]
-    901:    請求方式錯誤, 只接受POST請求
-    902:    兩次輸入的密碼不一致
-    903:    用戶名不合法
-    904:    用戶名已存在
-    905:    密碼不合法
-    906:    用戶不存在
+    901:    请求方式错误, 只接受POST请求
+    902:    两次输入的密码不一致
+    903:    用户名不合法
+    904:    用户名已存在
+    905:    密码不合法
+    906:    用户不存在
     907:    Email不合法
-    908:    手機號碼不合法
+    908:    手机号码不合法
     909:    城市或地址不合法
-    910:    原密碼錯誤
-    911:    必填字段為空
-    912:    用戶未登入
-    913:    重複登入
-    914:    密碼錯誤
-    915:    年齡不合法
-    916:    請求方式錯誤, 只接受GET請求
-    917:    用戶未登入, 且未提供任何可供查詢的字段
+    910:    原密码错误
+    911:    必填字段为空
+    912:    用户未登录
+    913:    重复登录
+    914:    密码错误
+    915:    年龄不合法
+    916:    请求方式错误, 只接受GET请求
+    917:    用户未登录, 且未提供任何可供查询的字段
 """
 
 
@@ -48,31 +48,31 @@ def __check_user_info(username, password_1, password_2, email, phone, age, city,
     """
     if username is None or password_1 is None or password_2 is None or email is None or \
             len(str(username)) == 0 or len(str(password_1)) == 0 or len(str(password_2)) == 0 or len(str(email)) == 0:
-        return -1, JsonResponse({'errno': 911, 'msg': '必填字段為空'})
+        return -1, JsonResponse({'errno': 911, 'msg': '必填字段为空'})
     try:
         if skip_check_duplicates:
             raise User.DoesNotExist()
         _ = User.objects.get(username=username)
-        return -1, JsonResponse({'errno': 904, 'msg': '用戶名已存在'})
+        return -1, JsonResponse({'errno': 904, 'msg': '用户名已存在'})
     except User.DoesNotExist:
         if re.match('.*\\W+.*', str(username)) is not None or len(str(username)) > 30:
-            return -1, JsonResponse({'errno': 903, 'msg': '用戶名不合法'})
+            return -1, JsonResponse({'errno': 903, 'msg': '用户名不合法'})
         if password_1 != password_2:
-            return -1, JsonResponse({'errno': 902, 'msg': '兩次輸入的密碼不一致'})
+            return -1, JsonResponse({'errno': 902, 'msg': '两次输入的密码不一致'})
         if len(str(password_1)) < 8 or len(str(password_1)) > 18 or \
                 re.match('.*\\d+.*', str(password_1)) is None or \
                 re.match('.*[a-zA-Z]+.*', str(password_1)) is None:
-            return -1, JsonResponse({'errno': 905, 'msg': '密碼不合法'})
+            return -1, JsonResponse({'errno': 905, 'msg': '密码不合法'})
         if len(str(email)) > 254 or re.match('[\\w.]+@[\\w.]+', str(email)) is None:
             return -1, JsonResponse({'errno': 907, 'msg': 'Email不合法'})
         if phone != '' and phone is not None and \
                 (len(str(phone)) != 11 or re.match('.*\\D+.*', str(phone)) is not None):
-            return -1, JsonResponse({'errno': 908, 'msg': '手機號碼不合法'})
+            return -1, JsonResponse({'errno': 908, 'msg': '手机号码不合法'})
         try:
             if age != '' and age is not None and (int(age) < 0 or int(age) > 150):
-                return -1, JsonResponse({'errno': 915, 'msg': '年齡不合法'})
+                return -1, JsonResponse({'errno': 915, 'msg': '年龄不合法'})
         except ValueError:
-            return -1, JsonResponse({'errno': 915, 'msg': '年齡不合法'})
+            return -1, JsonResponse({'errno': 915, 'msg': '年龄不合法'})
         if (city != '' and city is not None and len(str(city)) > 50) or \
                 (address != '' and address is not None and len(str(address)) > 100):
             return -1, JsonResponse({'errno': 909, 'msg': '城市或地址不合法'})
@@ -124,7 +124,7 @@ def register(request):
         new_user.save()
         return JsonResponse({'errno': 0, 'msg': '註冊成功'})
     else:
-        return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST請求'})
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
 
 
 @csrf_exempt
@@ -141,26 +141,29 @@ def login(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         if username is None or password is None or len(str(username)) == 0 or len(str(password)) == 0:
-            return JsonResponse({'errno': 911, 'msg': '必填字段為空'})
+            return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
         try:
             user = User.objects.get(username=username)
             if user.password == password:
                 if request.session.get('user_id') is not None:
-                    return JsonResponse({'errno': 913, 'msg': '重複登入'})
+                    return JsonResponse({'errno': 913, 'msg': '重复登录'})
                 request.session['user_id'] = user.user_id
                 return JsonResponse({'errno': 0, 'msg': '登入成功'})
             else:
-                return JsonResponse({'errno': 914, 'msg': '密碼錯誤'})
+                return JsonResponse({'errno': 914, 'msg': '密码错误'})
         except User.DoesNotExist:
-            return JsonResponse({'errno': 906, 'msg': '用戶不存在'})
+            return JsonResponse({'errno': 906, 'msg': '用户不存在'})
     else:
-        return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST請求'})
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
 
 
 def login_required(func):
+    """
+    登入验证装饰器
+    """
     def wrapper(request, *args, **kwargs):
         if request.session.get('user_id') is None:
-            return JsonResponse({'errno': 912, 'msg': '用戶未登入'})
+            return JsonResponse({'errno': 912, 'msg': '用户未登录'})
         return func(request, *args, **kwargs)
 
     return wrapper
@@ -179,7 +182,7 @@ def logout(request):
         request.session.flush()
         return JsonResponse({'errno': 0, 'msg': '註銷成功'})
     else:
-        return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST請求'})
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
 
 
 @csrf_exempt
@@ -208,7 +211,7 @@ def get_user_info(request):
             user = None
             match status:
                 case 0:
-                    return JsonResponse({'errno': 917, 'msg': '用戶未登入, 且未提供任何可供查詢的字段'})
+                    return JsonResponse({'errno': 917, 'msg': '用户未登录, 且未提供任何可供查询的字段'})
                 case 1:
                     user = User.objects.get(username=username)
                 case 2:
@@ -217,9 +220,9 @@ def get_user_info(request):
                     user = User.objects.get(user_id=session_user_id)
             return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': user.to_dict()})
         except User.DoesNotExist:
-            return JsonResponse({'errno': 906, 'msg': '用戶不存在'})
+            return JsonResponse({'errno': 906, 'msg': '用户不存在'})
     else:
-        return JsonResponse({'errno': 916, 'msg': '請求方式錯誤, 只接受GET請求'})
+        return JsonResponse({'errno': 916, 'msg': '请求方式错误, 只接受GET请求'})
 
 
 @csrf_exempt
@@ -252,7 +255,7 @@ def update_user_info(request):
         if user_id is None or len(str(user_id)) == 0:
             user_id = request.session.get('user_id')
         if user_id is None:
-            return JsonResponse({'errno': 917, 'msg': '用戶未登入, 且未提供任何可供查詢的字段'})
+            return JsonResponse({'errno': 917, 'msg': '用户未登录, 且未提供任何可供查询的字段'})
         info = {
             'username': request.POST.get('username'),
             'is_admin': request.POST.get('is_admin'),
@@ -274,7 +277,7 @@ def update_user_info(request):
                 info[key] = user.__dict__[key]
         if old_password is not None and old_password != '':
             if user.password != old_password:
-                return JsonResponse({'errno': 910, 'msg': '原密碼錯誤'})
+                return JsonResponse({'errno': 910, 'msg': '原密码错误'})
             else:
                 code, msg = __check_user_info(
                     info['username'],
@@ -329,4 +332,4 @@ def update_user_info(request):
             )
             return JsonResponse({'errno': 0, 'msg': '更新成功'})
     else:
-        return JsonResponse({'errno': 901, 'msg': '請求方式錯誤, 只接受POST請求'})
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})

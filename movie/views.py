@@ -211,3 +211,81 @@ def delete_movie(request):
     except Movie.DoesNotExist:
         return JsonResponse({'errno': 971, 'msg': '影视不存在'})
 
+
+@csrf_exempt
+@login_required
+@admin_required
+def update_movie_info(request):
+    """
+    更新指定movie_id的對應影视信息, 只接受POST請求, Body所需的字段為:\n
+    'movie_id': 影视ID\n
+    **# 以下所有的字段都是非必填的, 要改哪個填哪個**\n
+    'movie_name': 影视名\n
+    'movie_cover': 影视封面文件\n
+    'introduction': 影视简介\n
+    'movie_form': 影视形式\n
+    'movie_type': 影视类型\n
+    'area': 地区\n
+    'release_date': 上映日期\n
+    'director': 导演名\n
+    'screenwriter': 编剧名\n
+    'starring': 主演名\n
+    'language': 语言\n
+    'duration': 片长\n
+    'score': 评分\n
+    'heat': 热门度
+
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+    if request.method != 'POST':
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
+    movie_id = request.POST.get('movie_id')
+    if not movie_id:
+        return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+    try:
+        movie = Movie.objects.get(movie_id=movie_id)
+    except Movie.DoesNotExist:
+        return JsonResponse({'errno': 971, 'msg': '影视不存在'})
+    info = {
+        'movie_name': request.POST.get('movie_name'),
+        'introduction': request.POST.get('introduction'),
+        'movie_form': request.POST.get('movie_form'),
+        'movie_type': request.POST.get('movie_type'),
+        'area': request.POST.get('area'),
+        'release_date': request.POST.get('release_date'),
+        'director': request.POST.get('director'),
+        'screenwriter': request.POST.get('screenwriter'),
+        'starring': request.POST.get('starring'),
+        'language': request.POST.get('language'),
+        'duration': request.POST.get('duration'),
+        'score': request.POST.get('score'),
+        'heat': request.POST.get('heat')
+    }
+    for key, value in info.items():
+        if not value:
+            info[key] = movie.__dict__[key]
+    code, msg = __check_movie_info(info['movie_name'], info['movie_form'], info['movie_type'], info['area'],
+                                   info['release_date'], info['director'], info['screenwriter'], info['starring'],
+                                   info['language'], info['duration'], info['score'], info['heat'])
+    if code < 0:
+        return msg
+    movie.movie_name = info['movie_name']
+    movie_cover = request.FILES.get('movie_cover')
+    if movie_cover:
+        movie.movie_cover = movie_cover
+    movie.introduction = info['introduction']
+    movie.movie_form = info['movie_form']
+    movie.movie_type = info['movie_type']
+    movie.area = info['area']
+    movie.release_date = date.fromisoformat(info['release_date'])
+    movie.director = info['director']
+    movie.screenwriter = info['screenwriter']
+    movie.starring = info['starring']
+    movie.language = info['language']
+    movie.duration = info['duration']
+    movie.score = info['score']
+    movie.heat = info['heat']
+    movie.save()
+    return JsonResponse({'errno': 0, 'msg': '更新成功'})
+

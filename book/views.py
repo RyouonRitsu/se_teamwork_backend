@@ -10,7 +10,7 @@ from account.views import login_required
 
 """
 調用方法:
-    前端發送GET或POST請求到/account/函數名, 並添加相應的Params或Body(data使用鍵值對形式), 即可獲得包含相應信息的響應返回
+    前端發送GET或POST請求到/book/函數名, 並添加相應的Params或Body(data使用鍵值對形式), 即可獲得包含相應信息的響應返回
 errno:
     0:      [成功]
     901:    请求方式错误, 只接受POST请求

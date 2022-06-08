@@ -49,14 +49,13 @@ errno:
 """
 
 
-def __check_book_info(isbn, name, cover, book_type, author, author_country, press, published_date, page_number, price,
-                      score, heat, skip_check_duplicates=False):
+def __check_book_info(isbn, book_name, book_type, author, author_country, press, published_date,
+                      page_number, price, score, heat, skip_check_duplicates=False):
     """
     檢查書籍信息是否合法, 並返回錯誤代碼和jsonResponse, 合法返回0, 否則返回-1, 私有函數, 不可在外部調用, 此函數可忽略
 
     :param isbn: str
-    :param name: str
-    :param cover: str
+    :param book_name: str
     :param book_type: str
     :param author: str
     :param author_country: str
@@ -69,9 +68,9 @@ def __check_book_info(isbn, name, cover, book_type, author, author_country, pres
     :param skip_check_duplicates: bool = False
     :return: tuple(code: int, msg: JsonResponse | None)
     """
-    if isbn is None or name is None or cover is None or book_type is None or author is None or press is None or \
-            published_date is None or price is None or len(str(isbn)) == 0 or len(str(name)) == 0 or \
-            len(str(cover)) == 0 or len(str(book_type)) == 0 or len(str(author)) == 0 or len(str(press)) == 0 or \
+    if isbn is None or book_name is None is None or book_type is None or author is None or press is None or \
+            published_date is None or price is None or len(str(isbn)) == 0 or len(str(book_name)) == 0 or \
+            len(str(book_type)) == 0 or len(str(author)) == 0 or len(str(press)) == 0 or \
             len(str(published_date)) == 0 or len(str(price)) == 0:
         return -1, JsonResponse({'errno': 911, 'msg': '必填字段为空'})
     try:
@@ -82,10 +81,8 @@ def __check_book_info(isbn, name, cover, book_type, author, author_country, pres
     except Book.DoesNotExist:
         if len(str(isbn)) > 20:
             return -1, JsonResponse({'errno': 932, 'msg': 'ISBN过长'})
-        if len(str(name)) > 100:
+        if len(str(book_name)) > 100:
             return -1, JsonResponse({'errno': 933, 'msg': '书名过长'})
-        if len(str(cover)) > 500:
-            return -1, JsonResponse({'errno': 934, 'msg': '封面地址过长'})
         if len(str(book_type)) > 50:
             return -1, JsonResponse({'errno': 935, 'msg': '书籍类型过长'})
         if len(str(author)) > 50:
@@ -159,8 +156,8 @@ def add_book(request):
     """
     if request.method == 'POST':
         isbn = request.POST.get('ISBN')
-        name = request.POST.get('book_name')
-        cover = request.POST.get('book_cover')
+        book_name = request.POST.get('book_name')
+        book_cover = request.FILES.get('book_cover')
         introduction = request.POST.get('introduction')
         book_type = request.POST.get('book_type')
         author = request.POST.get('author')
@@ -172,14 +169,14 @@ def add_book(request):
         score = request.POST.get('score')
         heat = request.POST.get('heat')
         code, msg = __check_book_info(
-            isbn, name, cover, book_type, author, author_country, press, published_date, page_number, price, score, heat
+            isbn, book_name, book_type, author, author_country, press, published_date, page_number, price, score, heat
         )
         if code < 0:
             return msg
         new_book = Book(
             ISBN=isbn,
-            name=name,
-            cover=cover,
+            book_name=book_name,
+            book_cover=book_cover,
             introduction=introduction if introduction is not None else '',
             book_type=book_type,
             author=author,
@@ -257,7 +254,6 @@ def update_book_info(request):
             return JsonResponse({'errno': 942, 'msg': '书籍不存在'})
         info = {
             'book_name': request.POST.get('book_name'),
-            'book_cover': request.POST.get('book_cover'),
             'introduction': request.POST.get('introduction'),
             'book_type': request.POST.get('book_type'),
             'author': request.POST.get('author'),
@@ -270,12 +266,11 @@ def update_book_info(request):
             'heat': request.POST.get('heat')
         }
         for key in info:
-            if len(str(info[key])) == 0 or info[key] is None:
+            if info[key] is None or len(str(info[key])) == 0:
                 info[key] = book.__dict__[key]
         code, msg = __check_book_info(
             isbn,
             info['book_name'],
-            info['book_cover'],
             info['book_type'],
             info['author'],
             info['author_country'],
@@ -290,7 +285,9 @@ def update_book_info(request):
         if code < 0:
             return msg
         book.book_name = info['book_name']
-        book.book_cover = info['book_cover']
+        book_cover = request.FILES.get('book_cover')
+        if book_cover is not None:
+            book.book_cover = book_cover
         book.introduction = info['introduction']
         book.book_type = info['book_type']
         book.author = info['author']
@@ -327,7 +324,6 @@ def get_book_info_by_key(request):
         info = {
             'ISBN': request.GET.get('ISBN'),
             'book_name': request.GET.get('book_name'),
-            'book_cover': request.GET.get('book_cover'),
             'introduction': request.GET.get('introduction'),
             'book_type': request.GET.get('book_type'),
             'author': request.GET.get('author'),

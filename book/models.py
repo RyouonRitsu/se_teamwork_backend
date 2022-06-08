@@ -7,7 +7,7 @@ from django.db.models.fields.related import ManyToManyField
 class Book(models.Model):
     ISBN = models.CharField(max_length=20, primary_key=True)
     book_name = models.CharField(max_length=100)
-    book_cover = models.CharField(max_length=500)
+    book_cover = models.ImageField(upload_to='book_cover', blank=True, null=True)
     introduction = models.TextField(blank=True)
     book_type = models.CharField(max_length=50)
     author = models.CharField(max_length=50)
@@ -35,5 +35,7 @@ class Book(models.Model):
                 value = [i.id for i in value] if self.pk else None
             if isinstance(f, DateTimeField):
                 value = value.strftime('%Y/%m/%d %H:%M:%S') if value else None
+            if isinstance(f, models.ImageField):
+                value = value.path if value else None
             data[f.name] = value
         return data

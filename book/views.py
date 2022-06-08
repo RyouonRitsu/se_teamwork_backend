@@ -350,7 +350,8 @@ def get_book_info_by_key(request, raw=False):
                 reverse = True
             else:
                 reverse = False
-            books.sort(key=lambda x: (x.__dict__[sort_by], x.score, x.price, x.ISBN), reverse=reverse)
+            books.sort(key=lambda x: (x.__dict__[sort_by], x.heat, x.score, x.price, x.published_date, x.ISBN),
+                       reverse=reverse)
         if raw:
             return list(map(lambda x: x.to_dict(), books))
         if len(books) == 0:
@@ -404,7 +405,8 @@ def get_book_info(request, raw=False):
                 reverse = True
             else:
                 reverse = False
-            books.sort(key=lambda x: (x.__dict__[sort_by], x.score, x.price, x.ISBN), reverse=reverse)
+            books.sort(key=lambda x: (x.__dict__[sort_by], x.heat, x.score, x.price, x.published_date, x.ISBN),
+                       reverse=reverse)
         if raw:
             return list(map(lambda x: x.to_dict(), books))
         if len(books) == 0:

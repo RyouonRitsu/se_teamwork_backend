@@ -338,7 +338,7 @@ def get_movie_info_by_key(request, raw=False):
             reverse = True
         else:
             reverse = False
-        movies.sort(key=lambda x: (x.__dict__[sort_by], x.score, x.movie_id), reverse=reverse)
+        movies.sort(key=lambda x: (x.__dict__[sort_by], x.heat, x.score, x.release_date, x.movie_id), reverse=reverse)
     if raw:
         return list(map(lambda x: x.to_dict(), movies))
     if len(movies) == 0:
@@ -391,7 +391,7 @@ def get_movie_info(request, raw=False):
             reverse = True
         else:
             reverse = False
-        movies.sort(key=lambda x: (x.__dict__[sort_by], x.score, x.movie_id), reverse=reverse)
+        movies.sort(key=lambda x: (x.__dict__[sort_by], x.heat, x.score, x.release_date, x.movie_id), reverse=reverse)
     if raw:
         return list(map(lambda x: x.to_dict(), movies))
     if len(movies) == 0:

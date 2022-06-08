@@ -5,6 +5,7 @@ from account.models import User
 from movie.models import *
 from datetime import date
 from account.views import login_required
+from book.views import admin_required
 
 # Create your views here.
 
@@ -108,13 +109,81 @@ def __check_movie_info(movie_name, movie_form, movie_type, area, release_date, d
     except ValueError:
         return -1, JsonResponse({'errno': 970, 'msg': '片长不合法'})
     try:
-        if score != '' and score is not None and (float(score) < 0 or float(score) > 10):
+        if score and (float(score) < 0 or float(score) > 10):
             return -1, JsonResponse({'errno': 941, 'msg': '评分不合法'})
     except ValueError:
         return -1, JsonResponse({'errno': 941, 'msg': '评分不合法'})
     try:
-        if heat != '' and heat is not None and int(heat) < 0:
+        if heat and int(heat) < 0:
             return -1, JsonResponse({'errno': 943, 'msg': '热门度不合法'})
     except ValueError:
         return -1, JsonResponse({'errno': 943, 'msg': '热门度不合法'})
     return 0, None
+
+
+@csrf_exempt
+@login_required
+@admin_required
+def add_movie(request):
+    """
+    新增書籍, 只接受POST請求, Body所需的字段為:\n
+    **# 必填項**\n
+    'movie_name': 影视名\n
+    'movie_type': 影视类型\n
+    'area': 地区\n
+    'release_date': 上映日期\n
+    'director': 导演名\n
+    'screenwriter': 编剧名\n
+    'starring': 主演名\n
+    'language': 语言\n
+    **# 非必填項**\n
+    'movie_cover': 影视封面文件\n
+    'introduction': 影视简介\n
+    'movie_form': 影视形式\n
+    'duration': 片长\n
+    'score': 评分\n
+    'heat': 热门度
+
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+    if request.method != 'POST':
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
+    movie_name = request.POST.get('movie_name')
+    movie_cover = request.FILES.get('movie_cover')
+    introduction = request.POST.get('introduction')
+    movie_form = request.POST.get('movie_form')
+    movie_type = request.POST.get('movie_type')
+    area = request.POST.get('area')
+    release_date = request.POST.get('release_date')
+    director = request.POST.get('director')
+    screenwriter = request.POST.get('screenwriter')
+    starring = request.POST.get('starring')
+    language = request.POST.get('language')
+    duration = request.POST.get('duration')
+    score = request.POST.get('score')
+    heat = request.POST.get('heat')
+    code, msg = __check_movie_info(movie_name, movie_form, movie_type, area, release_date, director, screenwriter,
+                                   starring, language, duration, score, heat)
+    if code < 0:
+        return msg
+    new_movie = Movie(
+        movie_name=movie_name,
+        movie_cover=movie_cover,
+        introduction=introduction if introduction else '',
+        movie_form=movie_form if movie_form else '',
+        movie_type=movie_type,
+        area=area,
+        release_date=date.fromisoformat(release_date),
+        director=director,
+        screenwriter=screenwriter,
+        starring=starring,
+        language=language,
+        duration=duration if duration else None,
+        score=score if score else None
+    )
+    if heat:
+        new_movie.heat = heat
+    new_movie.save()
+    return JsonResponse({'errno': 0, 'msg': '添加成功'})
+

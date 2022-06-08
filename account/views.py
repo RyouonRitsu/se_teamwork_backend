@@ -59,7 +59,7 @@ def __check_user_info(username, password_1, password_2, email, phone, age, city,
             return -1, JsonResponse({'errno': 903, 'msg': '用户名不合法'})
         if password_1 != password_2:
             return -1, JsonResponse({'errno': 902, 'msg': '两次输入的密码不一致'})
-        if len(str(password_1)) < 8 or len(str(password_1)) > 18 or \
+        if len(str(password_1)) < 8 or len(str(password_1)) > 25 or \
                 re.match('.*\\d+.*', str(password_1)) is None or \
                 re.match('.*[a-zA-Z]+.*', str(password_1)) is None:
             return -1, JsonResponse({'errno': 905, 'msg': '密码不合法'})

@@ -33,7 +33,7 @@ errno:
     931:    ISBN已存在
     932:    ISBN过长
     933:    书名过长
-    934:    封面地址过长
+    934:    排序字段不存在
     935:    书籍类型过长
     936:    作者姓名过长
     937:    作者国籍过长
@@ -138,13 +138,13 @@ def add_book(request):
     **# 必填項**\n
     'ISBN': ISBN\n
     'book_name': 書名\n
-    'book_cover': 封面地址url\n
     'book_type': 書籍類型\n
     'author': 作者姓名\n
     'press': 出版社名\n
     'published_date': 出版日期(格式: YYYY-MM-DD)\n
     'price': 價格\n
     **# 非必填項**\n
+    'book_cover': 封面文件\n
     'introduction': 簡介\n
     'author_country': 作者國籍\n
     'page_number': 頁數\n
@@ -229,7 +229,7 @@ def update_book_info(request):
     'ISBN': ISBN\n
     **# 以下所有的字段都是非必填的, 要改哪個填哪個**\n
     'book_name': 書名\n
-    'book_cover': 封面地址url\n
+    'book_cover': 封面文件\n
     'introduction': 簡介\n
     'book_type': 書籍類型\n
     'author': 作者姓名\n
@@ -307,8 +307,8 @@ def update_book_info(request):
 @csrf_exempt
 def get_book_info_by_key(request):
     """
-    取得指定屬性同時包含指定關鍵詞的信息的對應書籍信息, 只接受GET請求, Params格式為:\n
-    ?屬性名=關鍵詞[&...]
+    取得指定屬性同時包含指定關鍵詞的信息的對應書籍信息, **可选**根据关键字排序和选择升序降序(是否反转), 只接受GET請求, Params格式為:\n
+    ?屬性名=關鍵詞[&...][&sort_by=屬性名&reverse=(True or False)]
 
     :param request: WSGIRequest
     :return: JsonResponse
@@ -338,6 +338,16 @@ def get_book_info_by_key(request):
         if not any(info.values()):
             return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
         books = list(filter(lambda x: __search(info, x), Book.objects.all()))
+        sort_by = request.GET.get('sort_by')
+        reverse = request.GET.get('reverse')
+        if sort_by is not None and sort_by != '':
+            if sort_by not in Book.__dict__:
+                return JsonResponse({'errno': 934, 'msg': '排序字段不存在'})
+            if reverse in ['True', 'true', 't', 'T', 'TRUE', '1', 'Yes', 'yes', 'YES', 'y', 'Y', '1']:
+                reverse = True
+            else:
+                reverse = False
+            books.sort(key=lambda x: x.__dict__[sort_by], reverse=reverse)
         if len(books) == 0:
             return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), books))})
@@ -351,8 +361,9 @@ def get_book_info(request):
     根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分割\n
     只要滿足屬性中同時包含所有關鍵字的書籍都會被選出\n
     如果提供的keyword為空則默認返回所有書籍的信息\n
+    **可选**根据关键字排序和选择升序降序(是否反转)\n
     只接受GET請求, Params格式為:\n
-    ?keyword=value1[,value2,...]
+    ?keyword=value1[,value2,...][&sort_by=屬性名&reverse=(True or False)]
 
     :param request: WSGIRequest
     :return: JsonResponse
@@ -376,6 +387,16 @@ def get_book_info(request):
             )
         keywords = str(keyword).split(',')
         books = list(filter(lambda x: __search(keywords, x), Book.objects.all()))
+        sort_by = request.GET.get('sort_by')
+        reverse = request.GET.get('reverse')
+        if sort_by is not None and sort_by != '':
+            if sort_by not in Book.__dict__:
+                return JsonResponse({'errno': 934, 'msg': '排序字段不存在'})
+            if reverse in ['True', 'true', 't', 'T', 'TRUE', '1', 'Yes', 'yes', 'YES', 'y', 'Y', '1']:
+                reverse = True
+            else:
+                reverse = False
+            books.sort(key=lambda x: x.__dict__[sort_by], reverse=reverse)
         if len(books) == 0:
             return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), books))})

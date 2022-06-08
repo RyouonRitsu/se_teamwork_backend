@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'account.apps.AccountConfig',
     'book.apps.BookConfig',
+    'movie.apps.MovieConfig',
     'main_page.apps.MainPageConfig',
     'corsheaders'
 ]

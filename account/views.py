@@ -213,7 +213,10 @@ def get_user_info(request):
                 case 0:
                     return JsonResponse({'errno': 917, 'msg': '用户未登录, 且未提供任何可供查询的字段'})
                 case 1:
-                    user = User.objects.get(username=username)
+                    users = list(filter(lambda x: username in x.username, User.objects.all()))
+                    if len(users) == 0:
+                        raise User.DoesNotExist()
+                    return JsonResponse({'errno': 0, 'msg': '查询成功', 'data': list(map(lambda x: x.to_dict(), users))})
                 case 2:
                     user = User.objects.get(user_id=user_id)
                 case 3:

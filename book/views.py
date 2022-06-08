@@ -307,7 +307,7 @@ def update_book_info(request):
 @csrf_exempt
 def get_book_info_by_key(request):
     """
-    取得指定屬性同時包含指定關鍵詞的信息的對應書籍信息, **可选**根据关键字排序和选择升序降序(是否反转), 只接受GET請求, Params格式為:\n
+    取得指定屬性同時包含指定關鍵詞的信息的對應書籍信息, **可选** 根据关键字排序和选择升序降序(是否反转), 只接受GET請求, Params格式為:\n
     ?屬性名=關鍵詞[&...][&sort_by=屬性名&reverse=(True or False)]
 
     :param request: WSGIRequest
@@ -361,7 +361,7 @@ def get_book_info(request):
     根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分割\n
     只要滿足屬性中同時包含所有關鍵字的書籍都會被選出\n
     如果提供的keyword為空則默認返回所有書籍的信息\n
-    **可选**根据关键字排序和选择升序降序(是否反转)\n
+    **可选** 根据关键字排序和选择升序降序(是否反转)\n
     只接受GET請求, Params格式為:\n
     ?keyword=value1[,value2,...][&sort_by=屬性名&reverse=(True or False)]
 

@@ -57,6 +57,7 @@ errno:
     968:    主演名过长
     969:    语言过长
     970:    片长不合法
+    971:    影视不存在
 """
 
 
@@ -80,8 +81,7 @@ def __check_movie_info(movie_name, movie_form, movie_type, area, release_date, d
     :return: tuple(code: int, msg: JsonResponse | None)
     """
     if not movie_name or not movie_type or not area or not release_date or not director or not screenwriter or \
-            not starring or not language or movie_name == '' or movie_type == '' or area == '' or release_date == '' or \
-            director == '' or screenwriter == '' or starring == '' or language == '':
+            not starring or not language:
         return -1, JsonResponse({'errno': 911, 'msg': '必填字段为空'})
     if len(str(movie_name)) > 100:
         return -1, JsonResponse({'errno': 961, 'msg': '影视名过长'})
@@ -186,4 +186,28 @@ def add_movie(request):
         new_movie.heat = heat
     new_movie.save()
     return JsonResponse({'errno': 0, 'msg': '添加成功'})
+
+
+@csrf_exempt
+@login_required
+@admin_required
+def delete_movie(request):
+    """
+    刪除影视, 只接受POST請求, Body所需的字段為:\n
+    **# 必填項**\n
+    'movie_id': 影视ID
+
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+    if request.method != 'POST':
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
+    movie_id = request.POST.get('movie_id')
+    if not movie_id:
+        return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+    try:
+        Movie.objects.get(movie_id=movie_id).delete()
+        return JsonResponse({'errno': 0, 'msg': '刪除成功'})
+    except Movie.DoesNotExist:
+        return JsonResponse({'errno': 971, 'msg': '影视不存在'})
 

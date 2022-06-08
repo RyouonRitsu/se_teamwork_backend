@@ -186,7 +186,7 @@ def logout(request):
 
 
 @csrf_exempt
-def get_user_info(request):
+def get_user_info(request, raw=False):
     """
     获取用户信息, 只接受GET請求, Params格式為(選擇其一即可):\n
     ?username=要查詢的用戶名\n
@@ -214,6 +214,8 @@ def get_user_info(request):
                     return JsonResponse({'errno': 917, 'msg': '用户未登录, 且未提供任何可供查询的字段'})
                 case 1:
                     users = list(filter(lambda x: username in x.username, User.objects.all()))
+                    if raw:
+                        return list(map(lambda x: x.to_dict(), users))
                     if len(users) == 0:
                         raise User.DoesNotExist()
                     return JsonResponse({'errno': 0, 'msg': '查询成功', 'data': list(map(lambda x: x.to_dict(), users))})
@@ -221,7 +223,9 @@ def get_user_info(request):
                     user = User.objects.get(user_id=user_id)
                 case 3:
                     user = User.objects.get(user_id=session_user_id)
-            return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': user.to_dict()})
+            if raw:
+                return [user.to_dict()]
+            return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': [user.to_dict()]})
         except User.DoesNotExist:
             return JsonResponse({'errno': 906, 'msg': '用户不存在'})
     else:

@@ -305,7 +305,7 @@ def update_book_info(request):
 
 
 @csrf_exempt
-def get_book_info_by_key(request):
+def get_book_info_by_key(request, raw=False):
     """
     取得指定屬性同時包含指定關鍵詞的信息的對應書籍信息, **可选** 根据关键字排序和选择升序降序(是否反转), 只接受GET請求, Params格式為:\n
     ?屬性名=關鍵詞[&...][&sort_by=屬性名&reverse=(True or False)]
@@ -348,6 +348,8 @@ def get_book_info_by_key(request):
             else:
                 reverse = False
             books.sort(key=lambda x: x.__dict__[sort_by], reverse=reverse)
+        if raw:
+            return list(map(lambda x: x.to_dict(), books))
         if len(books) == 0:
             return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), books))})
@@ -356,7 +358,7 @@ def get_book_info_by_key(request):
 
 
 @csrf_exempt
-def get_book_info(request):
+def get_book_info(request, raw=False):
     """
     根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分割\n
     只要滿足屬性中同時包含所有關鍵字的書籍都會被選出\n
@@ -397,6 +399,8 @@ def get_book_info(request):
             else:
                 reverse = False
             books.sort(key=lambda x: x.__dict__[sort_by], reverse=reverse)
+        if raw:
+            return list(map(lambda x: x.to_dict(), books))
         if len(books) == 0:
             return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), books))})
@@ -405,7 +409,7 @@ def get_book_info(request):
 
 
 @csrf_exempt
-def get_book_info_by_isbn(request):
+def get_book_info_by_isbn(request, raw=False):
     """
     取得指定ISBN號的書籍信息, 並為熱度值+1, 只接受GET請求, Params格式為:\n
     ?ISBN=書籍ISBN
@@ -421,6 +425,8 @@ def get_book_info_by_isbn(request):
             return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
         book.heat += 1
         book.save()
-        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': book.to_dict()})
+        if raw:
+            return [book.to_dict()]
+        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': [book.to_dict()]})
     else:
         return JsonResponse({'errno': 916, 'msg': '请求方式错误, 只接受GET请求'})

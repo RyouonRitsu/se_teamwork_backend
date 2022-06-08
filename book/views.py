@@ -385,3 +385,25 @@ def get_book_info(request):
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), books))})
     else:
         return JsonResponse({'errno': 916, 'msg': '请求方式错误, 只接受GET请求'})
+
+
+@csrf_exempt
+def get_book_info_by_isbn(request):
+    """
+    取得指定ISBN號的書籍信息, 並為熱度值+1, 只接受GET請求, Params格式為:\n
+    ?ISBN=書籍ISBN
+
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+    if request.method == 'GET':
+        isbn = request.GET.get('ISBN')
+        try:
+            book = Book.objects.get(ISBN=isbn)
+        except Book.DoesNotExist:
+            return JsonResponse({'errno': 946, 'msg': '找不到符合条件的结果'})
+        book.heat += 1
+        book.save()
+        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': book.to_dict()})
+    else:
+        return JsonResponse({'errno': 916, 'msg': '请求方式错误, 只接受GET请求'})

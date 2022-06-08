@@ -46,5 +46,75 @@ errno:
     944:    页数不合法
     945:    您没有权限执行此操作
     946:    找不到符合条件的结果
+    961:    影视名过长
+    962:    影视形式过长
+    963:    影视类型过长
+    964:    地区过长
+    965:    上映日期不合法
+    966:    导演名过长
+    967:    编剧名过长
+    968:    主演名过长
+    969:    语言过长
+    970:    片长不合法
 """
 
+
+def __check_movie_info(movie_name, movie_form, movie_type, area, release_date, director, screenwriter, starring,
+                       language, duration, score, heat):
+    """
+    檢查影视信息是否合法, 並返回錯誤代碼和jsonResponse, 合法返回0, 否則返回-1, 私有函數, 不可在外部調用, 此函數可忽略
+
+    :param movie_name: str
+    :param movie_form: str
+    :param movie_type: str
+    :param area: str
+    :param release_date: str
+    :param director: str
+    :param screenwriter: str
+    :param starring: str
+    :param language: str
+    :param duration: str
+    :param score: str
+    :param heat: str
+    :return: tuple(code: int, msg: JsonResponse | None)
+    """
+    if not movie_name or not movie_type or not area or not release_date or not director or not screenwriter or \
+            not starring or not language or movie_name == '' or movie_type == '' or area == '' or release_date == '' or \
+            director == '' or screenwriter == '' or starring == '' or language == '':
+        return -1, JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+    if len(str(movie_name)) > 100:
+        return -1, JsonResponse({'errno': 961, 'msg': '影视名过长'})
+    if movie_form and len(str(movie_form)) > 100:
+        return -1, JsonResponse({'errno': 962, 'msg': '影视形式过长'})
+    if len(str(movie_type)) > 50:
+        return -1, JsonResponse({'errno': 963, 'msg': '影视类型过长'})
+    if len(str(area)) > 100:
+        return -1, JsonResponse({'errno': 964, 'msg': '地区过长'})
+    try:
+        date.fromisoformat(release_date)
+    except ValueError:
+        return -1, JsonResponse({'errno': 965, 'msg': '上映日期不合法'})
+    if len(str(director)) > 100:
+        return -1, JsonResponse({'errno': 966, 'msg': '导演名过长'})
+    if len(str(screenwriter)) > 100:
+        return -1, JsonResponse({'errno': 967, 'msg': '编剧名过长'})
+    if len(str(starring)) > 100:
+        return -1, JsonResponse({'errno': 968, 'msg': '主演名过长'})
+    if len(str(language)) > 50:
+        return -1, JsonResponse({'errno': 969, 'msg': '语言过长'})
+    try:
+        if duration and int(duration) <= 0:
+            return -1, JsonResponse({'errno': 970, 'msg': '片长不合法'})
+    except ValueError:
+        return -1, JsonResponse({'errno': 970, 'msg': '片长不合法'})
+    try:
+        if score != '' and score is not None and (float(score) < 0 or float(score) > 10):
+            return -1, JsonResponse({'errno': 941, 'msg': '评分不合法'})
+    except ValueError:
+        return -1, JsonResponse({'errno': 941, 'msg': '评分不合法'})
+    try:
+        if heat != '' and heat is not None and int(heat) < 0:
+            return -1, JsonResponse({'errno': 943, 'msg': '热门度不合法'})
+    except ValueError:
+        return -1, JsonResponse({'errno': 943, 'msg': '热门度不合法'})
+    return 0, None

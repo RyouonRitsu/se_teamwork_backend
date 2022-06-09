@@ -25,6 +25,7 @@ def send_comment(request):
         2: body_type error
         3: content is empty
     """
+    global Comment
     if request.method == 'POST':
         body_type = request.POST.get('body_type')
         body_id = request.POST.get('body_id')

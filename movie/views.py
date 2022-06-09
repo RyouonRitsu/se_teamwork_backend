@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from movie.models import *
 from datetime import date
 from account.views import login_required
-from book.views import admin_required
+from book.views import admin_required, save_to_frontend
 
 # Create your views here.
 
@@ -168,10 +168,6 @@ def add_movie(request):
                                    screenwriter, starring, language, duration, score, heat)
     if code < 0:
         return msg
-    if movie_cover:
-        with open('../se_teamwork/src/assets/movie_cover/' + str(movie_cover), 'wb') as dst:
-            for chunk in movie_cover.chunks():
-                dst.write(chunk)
     new_movie = Movie(
         movie_name=movie_name,
         movie_cover=movie_cover,
@@ -190,6 +186,7 @@ def add_movie(request):
     if heat:
         new_movie.heat = heat
     new_movie.save()
+    save_to_frontend('../se_teamwork/src/assets', new_movie.movie_cover)
     return JsonResponse({'errno': 0, 'msg': '添加成功'})
 
 
@@ -279,9 +276,6 @@ def update_movie_info(request):
     movie.movie_name = info['movie_name']
     if movie_cover:
         movie.movie_cover = movie_cover
-        with open('../se_teamwork/src/assets/movie_cover/' + str(movie_cover), 'wb') as dst:
-            for chunk in movie_cover.chunks():
-                dst.write(chunk)
     movie.introduction = info['introduction']
     movie.movie_form = info['movie_form']
     movie.movie_type = info['movie_type']
@@ -295,6 +289,7 @@ def update_movie_info(request):
     movie.score = info['score']
     movie.heat = info['heat']
     movie.save()
+    save_to_frontend('../se_teamwork/src/assets', movie.movie_cover)
     return JsonResponse({'errno': 0, 'msg': '更新成功'})
 
 

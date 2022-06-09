@@ -20,6 +20,6 @@ urlpatterns = [
     path('dislike_comment', dislike_comment),
     path('show_report', show_report),
     path('report_comment', report_comment),
-    path('et_comments_by_type', get_comments_by_type),
+    path('get_comments_by_type', get_comments_by_type),
     path('get_comments_by_heat', get_comments_by_heat),
 ]

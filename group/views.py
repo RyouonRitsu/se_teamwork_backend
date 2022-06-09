@@ -21,12 +21,14 @@ def get_group_by_id(request):
     :return:
     """
     if request.method == 'GET':
+        # curr_group=0
         group_id = request.GET.get('group_id')
         all_groups = Group.objects.all()
-        for group in all_groups:
-            if group.id == group_id:
-                curr_group = group
-                break
+        # for group in all_groups:
+        #     if group.id == group_id:
+        #         curr_group = group
+        #         break
+        curr_group=Group.objects.get(id=group_id)
         return JsonResponse({'errno': 0, 'msg': 'success', 'data': curr_group.to_dict()})
     else:
         return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})

@@ -449,6 +449,20 @@ def get_group_info(request, raw=False):
             )
         keywords = str(keyword).split(',')
         groups = list(filter(lambda x: __search(keywords, x), Group.objects.all()))
+        sort_by = request.GET.get('sort_by')
+        reverse = request.GET.get('reverse')
+        if sort_by:
+            if sort_by not in Group.__dict__:
+                if raw:
+                    return []
+                return JsonResponse({'errno': 934, 'msg': '排序字段不存在'})
+            if reverse in ['True', 'true', 't', 'T', 'TRUE', '1', 'Yes', 'yes', 'YES', 'y', 'Y', '1']:
+                reverse = True
+            else:
+                reverse = False
+            if sort_by == 'heat':
+                sort_by = 'group_heat'
+            groups.sort(key=lambda x: (x.__dict__[sort_by], x.group_heat, x.id), reverse=reverse)
         if raw:
             return list(map(lambda x: x.to_dict(), groups))
         if len(groups) == 0:

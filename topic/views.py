@@ -349,7 +349,7 @@ def get_topic_info_by_key(request):
 
 
 @csrf_exempt
-def get_topic_info(request):
+def get_topic_info(request, raw=False):
     """
     根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分割\n
     只要滿足屬性中同時包含所有關鍵字的書籍都會被選出\n
@@ -373,11 +373,15 @@ def get_topic_info(request):
     if request.method == 'GET':
         keyword = request.GET.get('keyword')
         if keyword is None or keyword == '':
+            if raw:
+                return list(map(lambda x: x.to_dict(), Topic.objects.all()))
             return JsonResponse(
                 {'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), Topic.objects.all()))}
             )
         keywords = str(keyword).split(',')
         topics = list(filter(lambda x: __search(keywords, x), Topic.objects.all()))
+        if raw:
+            return list(map(lambda x: x.to_dict(), topics))
         if len(topics) == 0:
             return JsonResponse({'errno': 2, 'msg': '找不到符合條件的結果'})
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), topics))})

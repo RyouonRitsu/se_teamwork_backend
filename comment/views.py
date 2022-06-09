@@ -197,6 +197,9 @@ def get_comments_by_type(request):
         body_type = request.GET.get('body_type')
         all_comments = Comment.objects.filter(type=body_type).order_by('-num_likes')
         result = []
+        if all_comments is None:
+            return JsonResponse({'errno': 0, 'msg': 'success', 'data': []})
+
         if body_type == 1:
             books = Book.objects.filter(id__in=[comment.body_id for comment in all_comments])
             for i in range(len(books)):

@@ -174,7 +174,8 @@ def add_book(request):
         score = request.POST.get('score')
         heat = request.POST.get('heat')
         code, msg = __check_book_info(
-            isbn, book_name, book_type, author, author_country, press, published_date, page_number, price, score, heat
+            isbn, book_name, book_cover, book_type, author, author_country, press, published_date, page_number, price,
+            score, heat
         )
         if code < 0:
             return msg
@@ -273,9 +274,11 @@ def update_book_info(request):
         for key in info:
             if info[key] is None or len(str(info[key])) == 0:
                 info[key] = book.__dict__[key]
+        book_cover = request.FILES.get('book_cover')
         code, msg = __check_book_info(
             isbn,
             info['book_name'],
+            book_cover,
             info['book_type'],
             info['author'],
             info['author_country'],
@@ -290,7 +293,6 @@ def update_book_info(request):
         if code < 0:
             return msg
         book.book_name = info['book_name']
-        book_cover = request.FILES.get('book_cover')
         if book_cover is not None:
             book.book_cover = book_cover
         book.introduction = info['introduction']

@@ -60,7 +60,8 @@ errno:
 """
 
 
-def __check_movie_info(movie_name, movie_cover, movie_form, movie_type, area, release_date, director, screenwriter, starring,
+def __check_movie_info(movie_name, movie_cover, movie_form, movie_type, area, release_date, director, screenwriter,
+                       starring,
                        language, duration, score, heat):
     """
     檢查影视信息是否合法, 並返回錯誤代碼和jsonResponse, 合法返回0, 否則返回-1, 私有函數, 不可在外部調用, 此函數可忽略
@@ -163,8 +164,8 @@ def add_movie(request):
     duration = request.POST.get('duration')
     score = request.POST.get('score')
     heat = request.POST.get('heat')
-    code, msg = __check_movie_info(movie_name, movie_form, movie_type, area, release_date, director, screenwriter,
-                                   starring, language, duration, score, heat)
+    code, msg = __check_movie_info(movie_name, movie_cover, movie_form, movie_type, area, release_date, director,
+                                   screenwriter, starring, language, duration, score, heat)
     if code < 0:
         return msg
     new_movie = Movie(
@@ -265,13 +266,13 @@ def update_movie_info(request):
     for key, value in info.items():
         if not value:
             info[key] = movie.__dict__[key]
-    code, msg = __check_movie_info(info['movie_name'], info['movie_form'], info['movie_type'], info['area'],
-                                   info['release_date'], info['director'], info['screenwriter'], info['starring'],
-                                   info['language'], info['duration'], info['score'], info['heat'])
+    movie_cover = request.FILES.get('movie_cover')
+    code, msg = __check_movie_info(info['movie_name'], movie_cover, info['movie_form'], info['movie_type'],
+                                   info['area'], info['release_date'], info['director'], info['screenwriter'],
+                                   info['starring'], info['language'], info['duration'], info['score'], info['heat'])
     if code < 0:
         return msg
     movie.movie_name = info['movie_name']
-    movie_cover = request.FILES.get('movie_cover')
     if movie_cover:
         movie.movie_cover = movie_cover
     movie.introduction = info['introduction']

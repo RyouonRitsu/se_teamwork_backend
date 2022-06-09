@@ -21,7 +21,7 @@ errno:
     908:    手机号码不合法
     909:    城市或地址不合法
     910:    原密码错误
-    911:    必填字段为空
+    911:    必要信息缺失, 请检查后重新提交
     912:    用户未登录
     913:    重复登录
     914:    密码错误
@@ -48,7 +48,7 @@ def __check_user_info(username, password_1, password_2, email, phone, age, city,
     """
     if username is None or password_1 is None or password_2 is None or email is None or \
             len(str(username)) == 0 or len(str(password_1)) == 0 or len(str(password_2)) == 0 or len(str(email)) == 0:
-        return -1, JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+        return -1, JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
     try:
         if skip_check_duplicates:
             raise User.DoesNotExist()
@@ -141,7 +141,7 @@ def login(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         if username is None or password is None or len(str(username)) == 0 or len(str(password)) == 0:
-            return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+            return JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
         try:
             user = User.objects.get(username=username)
             if user.password == password:

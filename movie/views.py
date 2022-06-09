@@ -23,7 +23,7 @@ errno:
     908:    手机号码不合法
     909:    城市或地址不合法
     910:    原密码错误
-    911:    必填字段为空
+    911:    必要信息缺失, 请检查后重新提交
     912:    用户未登录
     913:    重复登录
     914:    密码错误
@@ -60,12 +60,13 @@ errno:
 """
 
 
-def __check_movie_info(movie_name, movie_form, movie_type, area, release_date, director, screenwriter, starring,
+def __check_movie_info(movie_name, movie_cover, movie_form, movie_type, area, release_date, director, screenwriter, starring,
                        language, duration, score, heat):
     """
     檢查影视信息是否合法, 並返回錯誤代碼和jsonResponse, 合法返回0, 否則返回-1, 私有函數, 不可在外部調用, 此函數可忽略
 
     :param movie_name: str
+    :param movie_cover: File
     :param movie_form: str
     :param movie_type: str
     :param area: str
@@ -79,9 +80,9 @@ def __check_movie_info(movie_name, movie_form, movie_type, area, release_date, d
     :param heat: str
     :return: tuple(code: int, msg: JsonResponse | None)
     """
-    if not movie_name or not movie_type or not area or not release_date or not director or not screenwriter or \
-            not starring or not language:
-        return -1, JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+    if not movie_name or not movie_cover or not movie_type or not area or not release_date or not director or \
+            not screenwriter or not starring or not language:
+        return -1, JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
     if len(str(movie_name)) > 100:
         return -1, JsonResponse({'errno': 961, 'msg': '影视名过长'})
     if movie_form and len(str(movie_form)) > 100:
@@ -128,6 +129,7 @@ def add_movie(request):
     新增書籍, 只接受POST請求, Body所需的字段為:\n
     **# 必填項**\n
     'movie_name': 影视名\n
+    'movie_cover': 影视封面文件\n
     'movie_type': 影视类型\n
     'area': 地区\n
     'release_date': 上映日期\n
@@ -136,7 +138,6 @@ def add_movie(request):
     'starring': 主演名\n
     'language': 语言\n
     **# 非必填項**\n
-    'movie_cover': 影视封面文件\n
     'introduction': 影视简介\n
     'movie_form': 影视形式\n
     'duration': 片长\n
@@ -203,7 +204,7 @@ def delete_movie(request):
         return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
     movie_id = request.POST.get('movie_id')
     if not movie_id:
-        return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+        return JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
     try:
         Movie.objects.get(movie_id=movie_id).delete()
         return JsonResponse({'errno': 0, 'msg': '刪除成功'})
@@ -241,7 +242,7 @@ def update_movie_info(request):
         return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
     movie_id = request.POST.get('movie_id')
     if not movie_id:
-        return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+        return JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
     try:
         movie = Movie.objects.get(movie_id=movie_id)
     except Movie.DoesNotExist:
@@ -327,7 +328,7 @@ def get_movie_info_by_key(request, raw=False):
     if not any(info.values()):
         if raw:
             return []
-        return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+        return JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
     movies = list(filter(lambda x: __search(info, x), Movie.objects.all()))
     sort_by = request.GET.get('sort_by')
     reverse = request.GET.get('reverse')
@@ -419,7 +420,7 @@ def get_movie_info_by_id(request, raw=False):
     if not movie_id:
         if raw:
             return []
-        return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+        return JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
     try:
         movie = Movie.objects.get(movie_id=movie_id)
     except Movie.DoesNotExist:

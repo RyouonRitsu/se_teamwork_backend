@@ -2,6 +2,8 @@ from django.shortcuts import render
 from account.views import *
 from book.views import *
 from movie.views import *
+from group.views import *
+from topic.views import *
 
 # Create your views here.
 
@@ -20,7 +22,7 @@ errno:
     908:    手机号码不合法
     909:    城市或地址不合法
     910:    原密码错误
-    911:    必填字段为空
+    911:    必要信息缺失, 请检查后重新提交
     912:    用户未登录
     913:    重复登录
     914:    密码错误
@@ -81,8 +83,8 @@ def search(request):
         data['书籍'] = get_book_info(request, raw=True)
         data['影视'] = get_movie_info(request, raw=True)
         # 索同学请在这里实现你的模糊搜索函数
-        # data['话题'] = get_topic_info(request, raw=True)
-        # data['小组'] = get_group_info(request, raw=True)
+        data['话题'] = get_topic_info(request, raw=True)
+        data['小组'] = get_group_info(request, raw=True)
     else:
         types = str(type_).split(',')
         if '用户' in types:
@@ -92,8 +94,8 @@ def search(request):
         if '影视' in types:
             data['影视'] = get_movie_info(request, raw=True)
         # 索同学请在这里实现你的模糊搜索函数
-        # if '话题' in types:
-        #     data['话题'] = get_topic_info(request, raw=True)
-        # if '小组' in types:
-        #     data['小组'] = get_group_info(request, raw=True)
+        if '话题' in types:
+            data['话题'] = get_topic_info(request, raw=True)
+        if '小组' in types:
+            data['小组'] = get_group_info(request, raw=True)
     return JsonResponse({'errno': 0, 'msg': 'ok', 'data': data})

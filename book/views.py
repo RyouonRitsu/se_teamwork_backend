@@ -23,7 +23,7 @@ errno:
     908:    手机号码不合法
     909:    城市或地址不合法
     910:    原密码错误
-    911:    必填字段为空
+    911:    必要信息缺失, 请检查后重新提交
     912:    用户未登录
     913:    重复登录
     914:    密码错误
@@ -49,13 +49,14 @@ errno:
 """
 
 
-def __check_book_info(isbn, book_name, book_type, author, author_country, press, published_date,
+def __check_book_info(isbn, book_name, book_cover, book_type, author, author_country, press, published_date,
                       page_number, price, score, heat, skip_check_duplicates=False):
     """
     檢查書籍信息是否合法, 並返回錯誤代碼和jsonResponse, 合法返回0, 否則返回-1, 私有函數, 不可在外部調用, 此函數可忽略
 
     :param isbn: str
     :param book_name: str
+    :param book_cover: File
     :param book_type: str
     :param author: str
     :param author_country: str
@@ -68,11 +69,11 @@ def __check_book_info(isbn, book_name, book_type, author, author_country, press,
     :param skip_check_duplicates: bool = False
     :return: tuple(code: int, msg: JsonResponse | None)
     """
-    if isbn is None or book_name is None is None or book_type is None or author is None or press is None or \
-            published_date is None or price is None or len(str(isbn)) == 0 or len(str(book_name)) == 0 or \
-            len(str(book_type)) == 0 or len(str(author)) == 0 or len(str(press)) == 0 or \
+    if isbn is None or book_name is None is None or not book_cover or book_type is None or author is None or \
+            press is None or published_date is None or price is None or len(str(isbn)) == 0 or \
+            len(str(book_name)) == 0 or len(str(book_type)) == 0 or len(str(author)) == 0 or len(str(press)) == 0 or \
             len(str(published_date)) == 0 or len(str(price)) == 0:
-        return -1, JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+        return -1, JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
     try:
         if skip_check_duplicates:
             raise Book.DoesNotExist()
@@ -142,13 +143,13 @@ def add_book(request):
     **# 必填項**\n
     'ISBN': ISBN\n
     'book_name': 書名\n
+    'book_cover': 封面文件\n
     'book_type': 書籍類型\n
     'author': 作者姓名\n
     'press': 出版社名\n
     'published_date': 出版日期(格式: YYYY-MM-DD)\n
     'price': 價格\n
     **# 非必填項**\n
-    'book_cover': 封面文件\n
     'introduction': 簡介\n
     'author_country': 作者國籍\n
     'page_number': 頁數\n
@@ -214,7 +215,7 @@ def delete_book(request):
     if request.method == 'POST':
         isbn = request.POST.get('ISBN')
         if isbn is None or len(str(isbn)) == 0:
-            return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+            return JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
         try:
             Book.objects.get(ISBN=isbn).delete()
             return JsonResponse({'errno': 0, 'msg': '刪除成功'})
@@ -251,7 +252,7 @@ def update_book_info(request):
     if request.method == 'POST':
         isbn = request.POST.get('ISBN')
         if isbn is None or len(str(isbn)) == 0:
-            return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+            return JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
         try:
             book = Book.objects.get(ISBN=isbn)
         except Book.DoesNotExist:
@@ -343,7 +344,7 @@ def get_book_info_by_key(request, raw=False):
         if not any(info.values()):
             if raw:
                 return []
-            return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+            return JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
         books = list(filter(lambda x: __search(info, x), Book.objects.all()))
         sort_by = request.GET.get('sort_by')
         reverse = request.GET.get('reverse')
@@ -441,7 +442,7 @@ def get_book_info_by_isbn(request, raw=False):
         if not isbn:
             if raw:
                 return []
-            return JsonResponse({'errno': 911, 'msg': '必填字段为空'})
+            return JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
         try:
             book = Book.objects.get(ISBN=isbn)
         except Book.DoesNotExist:

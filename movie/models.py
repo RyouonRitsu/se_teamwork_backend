@@ -7,7 +7,7 @@ from django.db.models.fields.related import ManyToManyField
 class Movie(models.Model):
     movie_id = models.AutoField(primary_key=True)
     movie_name = models.CharField(max_length=100)
-    movie_cover = models.ImageField(upload_to='../se_teamwork/src/assets/movie_cover', blank=True, null=True)
+    movie_cover = models.ImageField(upload_to='movie_cover', blank=True, null=True)
     introduction = models.TextField(blank=True)
     movie_form = models.CharField(max_length=100, blank=True)
     movie_type = models.CharField(max_length=50)

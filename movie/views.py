@@ -168,6 +168,10 @@ def add_movie(request):
                                    screenwriter, starring, language, duration, score, heat)
     if code < 0:
         return msg
+    if movie_cover:
+        with open('../se_teamwork/src/assets/movie_cover/' + str(movie_cover), 'wb') as dst:
+            for chunk in movie_cover.chunks():
+                dst.write(chunk)
     new_movie = Movie(
         movie_name=movie_name,
         movie_cover=movie_cover,
@@ -275,6 +279,9 @@ def update_movie_info(request):
     movie.movie_name = info['movie_name']
     if movie_cover:
         movie.movie_cover = movie_cover
+        with open('../se_teamwork/src/assets/movie_cover/' + str(movie_cover), 'wb') as dst:
+            for chunk in movie_cover.chunks():
+                dst.write(chunk)
     movie.introduction = info['introduction']
     movie.movie_form = info['movie_form']
     movie.movie_type = info['movie_type']

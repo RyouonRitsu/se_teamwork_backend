@@ -179,6 +179,10 @@ def add_book(request):
         )
         if code < 0:
             return msg
+        if book_cover:
+            with open('../se_teamwork/src/assets/book_cover/' + str(book_cover), 'wb') as dst:
+                for chunk in book_cover.chunks():
+                    dst.write(chunk)
         new_book = Book(
             ISBN=isbn,
             book_name=book_name,
@@ -295,6 +299,9 @@ def update_book_info(request):
         book.book_name = info['book_name']
         if book_cover is not None:
             book.book_cover = book_cover
+            with open('../se_teamwork/src/assets/book_cover/' + str(book_cover), 'wb') as dst:
+                for chunk in book_cover.chunks():
+                    dst.write(chunk)
         book.introduction = info['introduction']
         book.book_type = info['book_type']
         book.author = info['author']

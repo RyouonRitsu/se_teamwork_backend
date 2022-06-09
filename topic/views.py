@@ -330,10 +330,6 @@ def get_topic_info_by_key(request):
                 return False
         return True
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 05614248f12656d946c15de7e2219c368a29ad6f
     if request.method == 'GET':
         info = {
             'topic_name': request.GET.get('topic_name'),
@@ -404,10 +400,6 @@ def get_diary_info_by_key(request):
                 return False
         return True
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 05614248f12656d946c15de7e2219c368a29ad6f
     if request.method == 'GET':
         info = {
             'diary_title': request.GET.get('diary_title'),
@@ -463,8 +455,4 @@ def get_diary_info(request):
             return JsonResponse({'errno': 2, 'msg': '找不到符合條件的結果'})
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), diaries))})
     else:
-<<<<<<< HEAD
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
-=======
-        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
->>>>>>> 05614248f12656d946c15de7e2219c368a29ad6f

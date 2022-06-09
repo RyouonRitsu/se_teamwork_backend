@@ -81,9 +81,9 @@ def get_all_comments(request):
     """
     if request.method == 'GET':
         body_id = request.GET.get('body_id')
-        # all comments of a body sorted by likes
+
         all_comments = Comment.objects.filter(body_id=body_id).order_by('-num_likes')
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [all_comments for _ in all_comments]})
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), all_comments))})
 
 
 @csrf_exempt
@@ -181,7 +181,7 @@ def show_report(request):
         reports = Report.objects.all()
         # sort by time
         reports = reports.order_by('-date')
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [reports for _ in reports]})
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), reports))})
     else:
         return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})
 

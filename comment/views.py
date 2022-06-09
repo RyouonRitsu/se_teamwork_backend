@@ -217,7 +217,7 @@ def get_comments_by_type(request):
                 result.append(book + comment)
             return JsonResponse({'errno': 0, 'msg': 'success', 'data': result})
 
-        elif body_type == 2:
+        elif int(body_type) == 2:
             movies = Movie.objects.filter(movie_id__in=[comment.body_id for comment in all_comments])
             for i in range(len(all_comments)):
                 movie = [movies[i].to_dict]

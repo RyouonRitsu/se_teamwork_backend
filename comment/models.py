@@ -14,6 +14,7 @@ class Comment(models.Model):
     type = models.IntegerField(default=0, null=False)
     body_id = models.BigIntegerField(default=0, null=False)
     comment_num_comments = models.IntegerField(default=0)
+    title = models.CharField(max_length=100,null=True)
 
     def to_dict(self, fields=None, exclude=None):
         data = {}

@@ -29,7 +29,7 @@ def send_comment(request):
     if request.method == 'POST':
         body_type = request.POST.get('body_type')
         body_id = request.POST.get('body_id')
-        content = request.POST['content']
+        content = request.POST.get('content')
         if content == '' or not content:
             return JsonResponse({'errno': '3', 'msg': 'content is empty'})
         authorId = request.session.get('user_id')
@@ -38,14 +38,22 @@ def send_comment(request):
         # param body_id for the body that this comment belongs to
         body_id = int(body_id)
         if body_type == 1:
-            from book.models import Book
             book = Book.objects.get(ISBN=body_id)
             book.book_num_comments += 1
+            title = request.POST.get('title')
+            if title == '' or not title:
+                return JsonResponse({'errno': '3', 'msg': 'title is empty'})
+            if len(content)<25:
+                return JsonResponse({'errno': '3', 'msg': 'content is too short'})
             book.save()
         elif body_type == 2:
-            from movie.models import Movie
             movie = Movie.objects.get(movie_id=body_id)
             movie.movie_num_comments += 1
+            title = request.POST.get('title')
+            if title == '' or not title:
+                return JsonResponse({'errno': '3', 'msg': 'title is empty'})
+            if len(content) < 25:
+                return JsonResponse({'errno': '3', 'msg': 'content is too short'})
             movie.save()
         elif body_type == 3:
             from group.models import Post
@@ -201,15 +209,16 @@ def get_comments_by_type(request):
         if all_comments is None:
             return JsonResponse({'errno': 0, 'msg': 'success', 'data': []})
 
-        if body_type == 1:
-            books = Book.objects.filter(id__in=[comment.body_id for comment in all_comments])
+        if int(body_type) == 1:
+            books = Book.objects.filter(ISBN__in=[comment.body_id for comment in all_comments])
             for i in range(len(books)):
                 book = [books[i].to_dict()]
                 comment = [all_comments[i].to_dict()]
                 result.append(book + comment)
             return JsonResponse({'errno': 0, 'msg': 'success', 'data': result})
+
         elif body_type == 2:
-            movies = Movie.objects.filter(id__in=[comment.body_id for comment in all_comments])
+            movies = Movie.objects.filter(movie_id__in=[comment.body_id for comment in all_comments])
             for i in range(len(all_comments)):
                 movie = [movies[i].to_dict]
                 comment = [all_comments[i].to_dict()]

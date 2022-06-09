@@ -21,15 +21,9 @@ def get_group_by_id(request):
     :return:
     """
     if request.method == 'GET':
-        # curr_group=0
         group_id = request.GET.get('group_id')
-        all_groups = Group.objects.all()
-        # for group in all_groups:
-        #     if group.id == group_id:
-        #         curr_group = group
-        #         break
-        curr_group=Group.objects.get(id=group_id)
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': curr_group.to_dict()})
+        curr_group = Group.objects.get(id=group_id)
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [curr_group.to_dict()]})
     else:
         return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
 
@@ -44,7 +38,7 @@ def get_all_groups(request):
     if request.method == 'GET':
         all_groups = Group.objects.all()
         all_groups = sorted(all_groups, key=lambda group: group.group_heat, reverse=True)
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [group.to_dict() for group in all_groups]})
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), all_groups))})
     else:
         return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
 
@@ -163,7 +157,7 @@ def get_groups_by_user(request):
         group_ids = Group_Members.objects.filter(user_id=user_id).values_list('group_id', flat=True)
         # get all the groups that id in the group_ids
         groups = Group.objects.filter(id__in=group_ids)
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [group.to_dict() for group in groups]})
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), groups))})
     else:
         return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
 
@@ -181,7 +175,7 @@ def get_post_by_id(request):
     if request.method == 'GET':
         post_id = request.GET.get('post_id')
         post = Post.objects.get(id=post_id)
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': post.to_dict()})
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [post.to_dict()]})
     else:
         return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
 
@@ -270,7 +264,7 @@ def get_posts_by_group_id(request):
         curr_group = Group.objects.get(id=group_id)
         posts = curr_group.posts.all()
         posts = sorted(posts, key=lambda post: post.post_heat, reverse=True)
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [post.to_dict() for post in posts]})
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), posts))})
     else:
         return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
 
@@ -289,7 +283,7 @@ def get_posts_by_user(request):
     if request.method == 'GET':
         user_id = request.session.get('user_id')
         posts = Post.objects.filter(post_authorId=user_id)
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [post.to_dict() for post in posts]})
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), posts))})
     else:
         return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
 
@@ -343,7 +337,7 @@ def get_post_by_id(request):
     if request.method == 'GET':
         post_id = request.GET.get('post_id')
         curr_post = Post.objects.get(id=post_id)
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': curr_post.to_dict()})
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [curr_post.to_dict()]})
     else:
         return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
 
@@ -420,7 +414,7 @@ def get_group_info_by_key(request):
 
 
 @csrf_exempt
-def get_group_info(request, raw=False):
+def get_group_info(request):
     """
     根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分割\n
     只要滿足屬性中同時包含所有關鍵字的書籍都會被選出\n
@@ -444,29 +438,11 @@ def get_group_info(request, raw=False):
     if request.method == 'GET':
         keyword = request.GET.get('keyword')
         if keyword is None or keyword == '':
-            if raw:
-                return list(map(lambda x: x.to_dict(), Group.objects.all()))
             return JsonResponse(
                 {'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), Group.objects.all()))}
             )
         keywords = str(keyword).split(',')
         groups = list(filter(lambda x: __search(keywords, x), Group.objects.all()))
-        sort_by = request.GET.get('sort_by')
-        reverse = request.GET.get('reverse')
-        if sort_by:
-            if sort_by not in Group.__dict__:
-                if raw:
-                    return []
-                return JsonResponse({'errno': 934, 'msg': '排序字段不存在'})
-            if reverse in ['True', 'true', 't', 'T', 'TRUE', '1', 'Yes', 'yes', 'YES', 'y', 'Y', '1']:
-                reverse = True
-            else:
-                reverse = False
-            if sort_by == 'heat':
-                sort_by = 'group_heat'
-            groups.sort(key=lambda x: (x.__dict__[sort_by], x.group_heat, x.id), reverse=reverse)
-        if raw:
-            return list(map(lambda x: x.to_dict(), groups))
         if len(groups) == 0:
             return JsonResponse({'errno': 2, 'msg': '找不到符合條件的結果'})
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), groups))})

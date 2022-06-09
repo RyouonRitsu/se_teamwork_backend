@@ -7,7 +7,7 @@ from django.db.models.fields.related import ManyToManyField
 class Book(models.Model):
     ISBN = models.CharField(max_length=20, primary_key=True)
     book_name = models.CharField(max_length=100)
-    book_cover = models.ImageField(upload_to='../se_teamwork/src/assets/book_cover', blank=True, null=True)
+    book_cover = models.ImageField(upload_to='book_cover', blank=True, null=True)
     introduction = models.TextField(blank=True)
     book_type = models.CharField(max_length=50)
     author = models.CharField(max_length=50)

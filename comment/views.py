@@ -2,9 +2,11 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
+from book.models import Book
 from comment.models import Comment, Report
 from account.views import login_required
 from book.views import admin_required
+from movie.models import Movie
 
 
 @csrf_exempt
@@ -34,12 +36,12 @@ def send_comment(request):
         body_id = int(body_id)
         if body_type == 1:
             from book.models import Book
-            book = Book.objects.get(id=body_id)
+            book = Book.objects.get(ISBN=body_id)
             book.book_num_comments += 1
             book.save()
         elif body_type == 2:
             from movie.models import Movie
-            movie = Movie.objects.get(id=body_id)
+            movie = Movie.objects.get(movie_id=body_id)
             movie.movie_num_comments += 1
             movie.save()
         elif body_type == 3:
@@ -147,14 +149,17 @@ def report_comment(request):
     """
     if request.method == 'POST':
         comment_id = request.POST.get('comment_id')
-        comment = Comment.objects.get(id=comment_id)
-        reason = request.POST['reason']
+        report_title = request.POST.get('report_title')
+        if report_title == '' or not report_title:
+            return JsonResponse({'errno': 2, "msg": "Report title is empty."})
+        reason = request.POST.get('reason')
         if reason == '' or not reason:
             return JsonResponse({'errno': '2', 'msg': 'reason is empty'})
         if len(reason) < 15:
             return JsonResponse({'errno': '3', 'msg': 'reason is too short'})
         # add a new report to the database
-        report = Report(comment_id=comment_id, reason=reason, reporter_id=request.session.get('user_id'))
+        report = Report(comment_id=comment_id, title=report_title, reason=reason,
+                        reporter_id=request.session.get('user_id'))
 
         report.save()
         return JsonResponse({'errno': 0, "msg": "You have reported a comment."})
@@ -175,5 +180,26 @@ def show_report(request):
         # sort by time
         reports = reports.order_by('-date')
         return JsonResponse({'errno': 0, 'msg': 'success', 'data': [reports for _ in reports]})
+    else:
+        return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})
+
+
+def get_comments_by_type(request):
+    """
+    接受get请求，返回评论信息
+    :param type:
+    :param request:
+    :param body_id:
+    """
+    if request.method == 'GET':
+        body_id = request.GET.get('body_id')
+        body_type = request.GET.get('body_type')
+        all_comments = Comment.objects.filter(body_id=body_id, type=body_type).order_by('-num_likes')
+        if body_type == 1:
+            books = Book.objects.filter(id__in=[comment.body_id for comment in all_comments])
+            return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), books))})
+        elif body_type == 2:
+            movies = Movie.objects.filter(id__in=[comment.body_id for comment in all_comments])
+            return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), movies))})
     else:
         return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})

@@ -1,8 +1,10 @@
 from django.db import models
 
-
-
 # Create your models here.
+from django.db.models.fields import DateTimeField
+from django.db.models.fields.related import ManyToManyField
+
+
 class Group(models.Model):
     id = models.BigAutoField(primary_key=True)
     group_name = models.CharField(max_length=200, null=False)
@@ -13,22 +15,27 @@ class Group(models.Model):
     group_rules = models.TextField()
     num_of_posts = models.IntegerField(default=0)
     group_picture_url = models.CharField(max_length=200, null=True)
+    group_cover = models.ImageField(upload_to='book_cover', blank=True, null=True)
 
     def __str__(self):
         return self.group_name
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'group_name': self.group_name,
-            'group_description': self.group_description,
-            'group_created_date': self.group_created_date,
-            'group_heat': self.group_heat,
-            'group_num_members': self.group_num_members,
-            'group_rules': self.group_rules,
-            'num_of_posts': self.num_of_posts,
-            'group_picture_url': self.group_picture_url
-        }
+    def to_dict(self, fields=None, exclude=None):
+        data = {}
+        for f in self._meta.concrete_fields + self._meta.many_to_many:
+            value = f.value_from_object(self)
+            if fields and f.name not in fields:
+                continue
+            if exclude and f.name in exclude:
+                continue
+            if isinstance(f, ManyToManyField):
+                value = [i.id for i in value] if self.pk else None
+            if isinstance(f, DateTimeField):
+                value = value.strftime('%Y/%m/%d %H:%M:%S') if value else None
+            if isinstance(f, models.ImageField):
+                value = value.name if value else None
+            data[f.name] = value
+        return data
 
 
 # create a class called Group_Member that inherits from the models.Model class
@@ -54,16 +61,19 @@ class Post(models.Model):
     def __str__(self):
         return self.post_title
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'group_id': self.group_id,
-            'title': self.post_title,
-            'content': self.post_content,
-            'create_time': self.post_create_time,
-            'heat': self.post_heat,
-            'authorId': self.post_authorId,
-            'likes': self.likes,
-            'dislikes': self.dislikes,
-            'num_comments': self.post_num_comments
-        }
+    def to_dict(self, fields=None, exclude=None):
+        data = {}
+        for f in self._meta.concrete_fields + self._meta.many_to_many:
+            value = f.value_from_object(self)
+            if fields and f.name not in fields:
+                continue
+            if exclude and f.name in exclude:
+                continue
+            if isinstance(f, ManyToManyField):
+                value = [i.id for i in value] if self.pk else None
+            if isinstance(f, DateTimeField):
+                value = value.strftime('%Y/%m/%d %H:%M:%S') if value else None
+            if isinstance(f, models.ImageField):
+                value = value.name if value else None
+            data[f.name] = value
+        return data

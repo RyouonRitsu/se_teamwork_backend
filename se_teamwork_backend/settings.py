@@ -40,6 +40,9 @@ INSTALLED_APPS = [
     'account.apps.AccountConfig',
     'book.apps.BookConfig',
     'movie.apps.MovieConfig',
+    'group.apps.GroupConfig',
+    'topic.apps.TopicConfig',
+    'comment.apps.CommentConfig',
     'main_page.apps.MainPageConfig',
     'corsheaders'
 ]

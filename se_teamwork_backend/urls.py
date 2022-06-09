@@ -21,5 +21,8 @@ urlpatterns = [
     path('account/', include(('account.urls', 'account'))),
     path('book/', include(('book.urls', 'book'))),
     path('movie/', include(('movie.urls', 'movie'))),
+    path('group/', include(('group.urls', 'group'))),
+    path('topic/', include(('topic.urls', 'topic'))),
+    path('comment/', include(('comment.urls', 'comment'))),
     path('main_page/', include(('main_page.urls', 'main_page'))),
 ]

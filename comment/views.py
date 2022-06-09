@@ -6,7 +6,9 @@ from book.models import Book
 from comment.models import Comment, Report
 from account.views import login_required
 from book.views import admin_required
+from group.models import Group, Post
 from movie.models import Movie
+from topic.models import Diary
 
 
 @csrf_exempt
@@ -192,14 +194,56 @@ def get_comments_by_type(request):
     :param body_id:
     """
     if request.method == 'GET':
-        body_id = request.GET.get('body_id')
         body_type = request.GET.get('body_type')
-        all_comments = Comment.objects.filter(body_id=body_id, type=body_type).order_by('-num_likes')
+        all_comments = Comment.objects.filter(type=body_type).order_by('-num_likes')
+        result = []
         if body_type == 1:
             books = Book.objects.filter(id__in=[comment.body_id for comment in all_comments])
-            return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), books))})
+            for i in range(len(books)):
+                book = [books[i].to_dict()]
+                comment = [all_comments[i].to_dict()]
+                result.append(book + comment)
+            return JsonResponse({'errno': 0, 'msg': 'success', 'data': result})
         elif body_type == 2:
             movies = Movie.objects.filter(id__in=[comment.body_id for comment in all_comments])
-            return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), movies))})
+            for i in range(len(all_comments)):
+                movie = [movies[i].to_dict]
+                comment = [all_comments[i].to_dict()]
+                result.append(movie + comment)
+            return JsonResponse({'errno': 0, 'msg': 'success', 'data': result})
+    else:
+        return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})
+
+
+def get_comments_by_heat(request):
+    """
+    接受get请求，返回评论信息
+    :param type:
+    :param request:
+    :param body_id:
+    """
+    global t
+    if request.method == 'GET':
+        all_comments = Comment.objects.order_by('-num_likes')
+        # 遍历 all_comments
+        # 如果评论的点赞数大于0，则将评论加入到热门评论中
+        bodies = []
+        for comment in all_comments:
+            if comment.type == 1:
+                book = Book.objects.get(ISBN=comment.body_id)
+                t = [book.to_dict()]
+            elif comment.type == 2:
+                movie = Movie.objects.get(movie_id=comment.body_id)
+                t = [movie.to_dict()]
+            elif comment.type == 3:
+                post = Post.objects.get(id=comment.body_id)
+                t = [post.to_dict()]
+            elif comment.type == 4:
+                diary = Diary.objects.get(id=comment.body_id)
+                t = [diary.to_dict()]
+            tt = [comment.to_dict()]
+            bodies.append(t + tt)
+
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': bodies})
     else:
         return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})

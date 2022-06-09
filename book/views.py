@@ -134,6 +134,18 @@ def admin_required(func):
     return wrapper
 
 
+def save_to_frontend(path, file):
+    """
+    将文件保存到前端的静态文件目录
+
+    :param path: str
+    :param file: File
+    """
+    with open(f'{path}{file.name}', 'wb') as f:
+        for chunk in file.chunks():
+            f.write(chunk)
+
+
 @csrf_exempt
 @login_required
 @admin_required
@@ -179,10 +191,6 @@ def add_book(request):
         )
         if code < 0:
             return msg
-        if book_cover:
-            with open('../se_teamwork/src/assets/book_cover/' + str(book_cover), 'wb') as dst:
-                for chunk in book_cover.chunks():
-                    dst.write(chunk)
         new_book = Book(
             ISBN=isbn,
             book_name=book_name,
@@ -200,6 +208,7 @@ def add_book(request):
         if heat is not None and heat != '':
             new_book.heat = heat
         new_book.save()
+        save_to_frontend('../se_teamwork/src/assets', new_book.book_cover)
         return JsonResponse({'errno': 0, 'msg': '添加成功'})
     else:
         return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
@@ -299,9 +308,6 @@ def update_book_info(request):
         book.book_name = info['book_name']
         if book_cover is not None:
             book.book_cover = book_cover
-            with open('../se_teamwork/src/assets/book_cover/' + str(book_cover), 'wb') as dst:
-                for chunk in book_cover.chunks():
-                    dst.write(chunk)
         book.introduction = info['introduction']
         book.book_type = info['book_type']
         book.author = info['author']
@@ -313,6 +319,7 @@ def update_book_info(request):
         book.score = info['score']
         book.heat = info['heat']
         book.save()
+        save_to_frontend('../se_teamwork/src/assets', book.book_cover)
         return JsonResponse({'errno': 0, 'msg': '更新成功'})
     else:
         return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})

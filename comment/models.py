@@ -19,6 +19,7 @@ class Comment(models.Model):
 class Report(models.Model):
     id = models.BigAutoField(primary_key=True)
     reason = models.TextField(null=False)
+    title = models.TextField(null=False)
     date = models.DateTimeField(auto_now_add=True)
     reporter_id = models.BigIntegerField(default=0, null=False)
     comment_id = models.BigIntegerField(default=0, null=False)

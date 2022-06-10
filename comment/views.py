@@ -2,6 +2,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
+from account.models import User
 from book.models import Book
 from comment.models import Comment, Report
 from account.views import login_required
@@ -210,19 +211,29 @@ def get_comments_by_type(request):
             return JsonResponse({'errno': 0, 'msg': 'success', 'data': []})
 
         if int(body_type) == 1:
-            books = Book.objects.filter(ISBN__in=[comment.body_id for comment in all_comments])
-            for i in range(len(books)):
-                book = [books[i].to_dict()]
-                comment = [all_comments[i].to_dict()]
-                result.append(book + comment)
+            for comment in all_comments:
+                _ = comment.to_dict()
+                _['book_info'] = Book.objects.get(ISBN=comment.body_id).to_dict()
+                _['user_info'] = User.objects.get(user_id=comment.authorId).to_dict()
+                result.append(_)
+            # books = Book.objects.filter(ISBN__in=[comment.body_id for comment in all_comments])
+            # for i in range(len(books)):
+            #     book = [books[i].to_dict()]
+            #     comment = [all_comments[i].to_dict()]
+            #     result.append(book + comment)
             return JsonResponse({'errno': 0, 'msg': 'success', 'data': result})
 
         elif int(body_type) == 2:
-            movies = Movie.objects.filter(movie_id__in=[comment.body_id for comment in all_comments])
-            for i in range(len(all_comments)):
-                movie = [movies[i].to_dict]
-                comment = [all_comments[i].to_dict()]
-                result.append(movie + comment)
+            for comment in all_comments:
+                _ = comment.to_dict()
+                _['movie_info'] = Movie.objects.get(movie_id=comment.body_id).to_dict()
+                _['user_info'] = User.objects.get(user_id=comment.authorId).to_dict()
+                result.append(_)
+            # movies = Movie.objects.filter(movie_id__in=[comment.body_id for comment in all_comments])
+            # for i in range(len(all_comments)):
+            #     movie = [movies[i].to_dict]
+            #     comment = [all_comments[i].to_dict()]
+            #     result.append(movie + comment)
             return JsonResponse({'errno': 0, 'msg': 'success', 'data': result})
     else:
         return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})

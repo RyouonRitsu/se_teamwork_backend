@@ -9,5 +9,6 @@ urlpatterns = [
     path('update_movie_info', update_movie_info),
     path('get_movie_info_by_key', get_movie_info_by_key),
     path('get_movie_info', get_movie_info),
-    path('get_movie_info_by_id', get_movie_info_by_id)
+    path('get_movie_info_by_id', get_movie_info_by_id),
+    path('set_movie_score', set_movie_score),
 ]

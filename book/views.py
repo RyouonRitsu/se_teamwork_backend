@@ -24,7 +24,7 @@ errno:
     909:    城市或地址不合法
     910:    原密码错误
     911:    必要信息缺失, 请检查后重新提交
-    912:    用户未登录
+    912:    用户未登录, 没有权限进行此操作
     913:    重复登录
     914:    密码错误
     915:    年龄不合法
@@ -107,7 +107,7 @@ def __check_book_info(isbn, book_name, book_cover, book_type, author, author_cou
         except ValueError:
             return -1, JsonResponse({'errno': 940, 'msg': '价格不合法'})
         try:
-            if score != '' and score is not None and (float(score) < 0 or float(score) > 10):
+            if score != '' and score is not None and (float(score) < 0 or float(score) > 5):
                 return -1, JsonResponse({'errno': 941, 'msg': '评分不合法'})
         except ValueError:
             return -1, JsonResponse({'errno': 941, 'msg': '评分不合法'})
@@ -472,3 +472,39 @@ def get_book_info_by_isbn(request, raw=False):
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': [book.to_dict()]})
     else:
         return JsonResponse({'errno': 916, 'msg': '请求方式错误, 只接受GET请求'})
+
+
+@csrf_exempt
+@login_required
+def set_book_score(request):
+    """
+    设置指定ISBN號的書籍的評分, 并自动计算平均值后写回数据库, 需要重新更新书籍展示页面的评分数据, 只接受POST請求, body所需字段:\n
+    'ISBN': 書籍ISBN\n
+    'score': 書籍评分
+
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+    if request.method != 'POST':
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
+    isbn = request.POST.get('ISBN')
+    score = request.POST.get('score')
+    if not isbn or not score:
+        return JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
+    try:
+        book = Book.objects.get(ISBN=isbn)
+    except Book.DoesNotExist:
+        return JsonResponse({'errno': 942, 'msg': '書籍不存在'})
+    try:
+        score = float(score)
+        if score < 0 or score > 5:
+            raise ValueError()
+    except ValueError:
+        return JsonResponse({'errno': 941, 'msg': '评分不合法'})
+    if not book.score:
+        book.score = score
+    else:
+        book.score = (book.score * book.score_num_cnt + score) / (book.score_num_cnt + 1)
+    book.score_num_cnt += 1
+    book.save()
+    return JsonResponse({'errno': 0, 'msg': '评分成功'})

@@ -19,6 +19,7 @@ class Movie(models.Model):
     language = models.CharField(max_length=50)
     duration = models.IntegerField(blank=True, null=True)
     score = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    score_num_cnt = models.IntegerField(default=0)
     heat = models.IntegerField(default=0)
     movie_num_comments = models.IntegerField(default=0)
 

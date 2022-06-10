@@ -22,7 +22,7 @@ errno:
     909:    城市或地址不合法
     910:    原密码错误
     911:    必要信息缺失, 请检查后重新提交
-    912:    用户未登录
+    912:    用户未登录, 没有权限进行此操作
     913:    重复登录
     914:    密码错误
     915:    年龄不合法
@@ -164,7 +164,7 @@ def login_required(func):
 
     def wrapper(request, *args, **kwargs):
         if request.session.get('user_id') is None:
-            return JsonResponse({'errno': 912, 'msg': '用户未登录'})
+            return JsonResponse({'errno': 912, 'msg': '用户未登录, 没有权限进行此操作'})
         return func(request, *args, **kwargs)
 
     return wrapper

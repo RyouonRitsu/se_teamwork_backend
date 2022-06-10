@@ -24,7 +24,7 @@ errno:
     909:    城市或地址不合法
     910:    原密码错误
     911:    必要信息缺失, 请检查后重新提交
-    912:    用户未登录
+    912:    用户未登录, 没有权限进行此操作
     913:    重复登录
     914:    密码错误
     915:    年龄不合法
@@ -110,7 +110,7 @@ def __check_movie_info(movie_name, movie_cover, movie_form, movie_type, area, re
     except ValueError:
         return -1, JsonResponse({'errno': 970, 'msg': '片长不合法'})
     try:
-        if score and (float(score) < 0 or float(score) > 10):
+        if score and (float(score) < 0 or float(score) > 5):
             return -1, JsonResponse({'errno': 941, 'msg': '评分不合法'})
     except ValueError:
         return -1, JsonResponse({'errno': 941, 'msg': '评分不合法'})
@@ -435,3 +435,39 @@ def get_movie_info_by_id(request, raw=False):
     if raw:
         return [movie.to_dict()]
     return JsonResponse({'errno': 0, 'msg': '查询成功', 'data': [movie.to_dict()]})
+
+
+@csrf_exempt
+@login_required
+def set_movie_score(request):
+    """
+    設定指定movie_id的影视評分, 并自动计算平均值后写回数据库, 需要重新更新书籍展示页面的评分数据, 只接受POST請求, body所需字段:\n
+    'movie_id': 要设置的影视ID\n
+    'score': 要设置的影视评分
+
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+    if request.method != 'POST':
+        return JsonResponse({'errno': 901, 'msg': '请求方式错误, 只接受POST请求'})
+    movie_id = request.POST.get('movie_id')
+    score = request.POST.get('score')
+    if not movie_id or not score:
+        return JsonResponse({'errno': 911, 'msg': '必要信息缺失, 请检查后重新提交'})
+    try:
+        movie = Movie.objects.get(movie_id=movie_id)
+    except Movie.DoesNotExist:
+        return JsonResponse({'errno': 971, 'msg': '影视不存在'})
+    try:
+        score = float(score)
+        if score < 0 or score > 5:
+            raise ValueError()
+    except ValueError:
+        return JsonResponse({'errno': 941, 'msg': '评分不合法'})
+    if not movie.score:
+        movie.score = score
+    else:
+        movie.score = (movie.score * movie.score_num_cnt + score) / (movie.score_num_cnt + 1)
+    movie.score_num_cnt += 1
+    movie.save()
+    return JsonResponse({'errno': 0, 'msg': '评分成功'})

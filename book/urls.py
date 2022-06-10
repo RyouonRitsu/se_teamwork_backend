@@ -9,5 +9,6 @@ urlpatterns = [
     path('update_book_info', update_book_info),
     path('get_book_info_by_key', get_book_info_by_key),
     path('get_book_info', get_book_info),
-    path('get_book_info_by_isbn', get_book_info_by_isbn)
+    path('get_book_info_by_isbn', get_book_info_by_isbn),
+    path('set_book_score', set_book_score),
 ]

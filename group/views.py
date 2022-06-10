@@ -61,7 +61,7 @@ def join_group(request):
         if Group_Members.objects.filter(user_id=request.session.get('user_id'), group_id=group_id).exists():
             return JsonResponse({'errno': 2, 'msg': 'You have already joined this group.'})
         curr_group.group_num_members += 1
-        Group_Members.objects.create(group_id=curr_group, user_id=request.session.get('user_id'))
+        Group_Members.objects.create(group_id=group_id, user_id=request.session.get('user_id'))
         # save what we have done
         curr_group.save()
         return JsonResponse({'errno': 0, 'msg': 'success'})

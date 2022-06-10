@@ -93,7 +93,29 @@ def get_all_comments(request):
         body_id = request.GET.get('body_id')
 
         all_comments = Comment.objects.filter(body_id=body_id).order_by('-num_likes')
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), all_comments))})
+        data = []
+        for comment in all_comments:
+            if comment.type == 1:
+                _ = comment.to_dict()
+                _['book_info'] = Book.objects.get(ISBN=comment.body_id).to_dict()
+                _['user_info'] = User.objects.get(user_id=comment.authorId).to_dict()
+                data.append(_)
+            elif comment.type == 2:
+                _ = comment.to_dict()
+                _['movie_info'] = Movie.objects.get(movie_id=comment.body_id).to_dict()
+                _['user_info'] = User.objects.get(user_id=comment.authorId).to_dict()
+                data.append(_)
+            elif comment.type == 3:
+                _ = comment.to_dict()
+                _['post_info'] = Post.objects.get(id=comment.body_id).to_dict()
+                _['user_info'] = User.objects.get(user_id=comment.authorId).to_dict()
+                data.append(_)
+            elif comment.type == 4:
+                _ = comment.to_dict()
+                _['diary_info'] = Diary.objects.get(id=comment.body_id).to_dict()
+                _['user_info'] = User.objects.get(user_id=comment.authorId).to_dict()
+                data.append(_)
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': data})
 
 
 @csrf_exempt
@@ -254,19 +276,25 @@ def get_comments_by_heat(request):
         bodies = []
         for comment in all_comments:
             if comment.type == 1:
-                book = Book.objects.get(ISBN=comment.body_id)
-                t = [book.to_dict()]
+                _ = comment.to_dict()
+                _['book_info'] = Book.objects.get(ISBN=comment.body_id).to_dict()
+                _['user_info'] = User.objects.get(user_id=comment.authorId).to_dict()
+                bodies.append(_)
             elif comment.type == 2:
-                movie = Movie.objects.get(movie_id=comment.body_id)
-                t = [movie.to_dict()]
+                _ = comment.to_dict()
+                _['movie_info'] = Movie.objects.get(movie_id=comment.body_id).to_dict()
+                _['user_info'] = User.objects.get(user_id=comment.authorId).to_dict()
+                bodies.append(_)
             elif comment.type == 3:
-                post = Post.objects.get(id=comment.body_id)
-                t = [post.to_dict()]
+                _ = comment.to_dict()
+                _['post_info'] = Post.objects.get(id=comment.body_id).to_dict()
+                _['user_info'] = User.objects.get(user_id=comment.authorId).to_dict()
+                bodies.append(_)
             elif comment.type == 4:
-                diary = Diary.objects.get(id=comment.body_id)
-                t = [diary.to_dict()]
-            tt = [comment.to_dict()]
-            bodies.append(t + tt)
+                _ = comment.to_dict()
+                _['diary_info'] = Diary.objects.get(id=comment.body_id).to_dict()
+                _['user_info'] = User.objects.get(user_id=comment.authorId).to_dict()
+                bodies.append(_)
 
         return JsonResponse({'errno': 0, 'msg': 'success', 'data': bodies})
     else:

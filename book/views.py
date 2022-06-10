@@ -141,7 +141,7 @@ def save_to_frontend(path, file):
     :param path: str
     :param file: File
     """
-    with open(f'{path}{file.name}', 'wb') as f:
+    with open(f'{path}/{file.name}', 'wb') as f:
         for chunk in file.chunks():
             f.write(chunk)
 

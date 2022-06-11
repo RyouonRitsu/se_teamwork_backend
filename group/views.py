@@ -483,7 +483,6 @@ def get_post_info_by_key(request):
                 return False
         return True
 
-
     if request.method == 'GET':
         info = {
             'group_id': request.GET.get('group_id'),
@@ -541,3 +540,31 @@ def get_post_info(request):
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), posts))})
     else:
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
+
+
+def apply_group_admin(request):
+    """
+    申请管理员身份
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+    if request.method == 'POST':
+
+        group_id = request.POST.get('group_id')
+        if group_id is None or group_id == '':
+            return JsonResponse({'errno': 2, 'msg': '必填字段为空'})
+        group = Group.objects.get(id=group_id)
+        if group is None:
+            return JsonResponse({'errno': 3, 'msg': '找不到小組'})
+        # find whether the user is in the group or not using Group_Member table
+        group_member = Group_Members.objects.filter(group_id=group_id, user_id=request.session.get('user_id'))
+        if len(group_member) == 0:
+            return JsonResponse({'errno': 4, 'msg': '您不是这个小组的成员'})
+        if group_member[0].is_admin:
+            return JsonResponse({'errno': 5, 'msg': '您已经是管理员了'})
+        # set is admin to true
+        group_member[0].is_admin = True
+        group_member[0].save()
+        return JsonResponse({'errno': 0, 'msg': '申請成功'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})

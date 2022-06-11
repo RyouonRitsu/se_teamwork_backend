@@ -13,7 +13,7 @@ from topic.models import Diary
 
 
 @csrf_exempt
-# @login_required
+@login_required
 def send_comment(request):
     """
     接受post请求，将评论信息存入数据库

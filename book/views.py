@@ -504,7 +504,7 @@ def set_book_score(request):
     if not book.score:
         book.score = score
     else:
-        book.score = (book.score * book.score_num_cnt + score) / (book.score_num_cnt + 1)
+        book.score = (float(book.score) * book.score_num_cnt + score) / (book.score_num_cnt + 1)
     book.score_num_cnt += 1
     book.save()
     return JsonResponse({'errno': 0, 'msg': '评分成功'})

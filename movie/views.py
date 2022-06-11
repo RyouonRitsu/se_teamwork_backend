@@ -467,7 +467,7 @@ def set_movie_score(request):
     if not movie.score:
         movie.score = score
     else:
-        movie.score = (movie.score * movie.score_num_cnt + score) / (movie.score_num_cnt + 1)
+        movie.score = (float(movie.score) * movie.score_num_cnt + score) / (movie.score_num_cnt + 1)
     movie.score_num_cnt += 1
     movie.save()
     return JsonResponse({'errno': 0, 'msg': '评分成功'})

@@ -479,7 +479,7 @@ def get_post_info_by_key(request):
 
     def __search(__info, obj):
         for key in [key for key in __info if __info[key] is not None and __info[key] != '']:
-            if __info[key] not in obj.__dict__[key]:
+            if __info[key] not in str(obj.__dict__[key]):
                 return False
         return True
 

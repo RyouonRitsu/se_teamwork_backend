@@ -31,4 +31,6 @@ urlpatterns = [
     path('get_group_info', get_group_info),
     path('get_post_info', get_post_info),
     path('get_post_info_by_key', get_post_info_by_key),
+    path('apply_group_admin', apply_group_admin),
+    path('upload_img', upload_img),
 ]

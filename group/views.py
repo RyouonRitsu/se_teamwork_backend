@@ -10,6 +10,24 @@ from django.views.decorators.csrf import csrf_exempt
 from group.models import Group, Post, Group_Members
 from account.views import login_required
 from book.views import admin_required
+import uuid
+from django.http import HttpResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+import oss2
+
+# 用户账号密码，第三部说明的Access
+# 阿里云主账号AccessKey拥有所有API的访问权限，风险很高。强烈建议您创建并使用RAM账号进行API访问或日常运维，请登录 https://ram.console.aliyun.com 创建RAM账号。
+# 获取的AccessKey
+auth = oss2.Auth('LTAI5tFc3gHdp9Wp8fbxnJyp', 'y7h7CDv6yuHyxMFH0lb5ggq89JDpyG')
+# 这个是需要用特定的地址，不同地域的服务器地址不同，不要弄错了
+endpoint = 'https://oss-cn-hangzhou.aliyuncs.com'
+# 你的项目名称，类似于不同的项目上传的图片前缀url不同
+# 因为我用的是ajax传到后端方法接受的是b字节文件，需要如下配置。 阿里云oss支持更多的方式，下面有链接可以自己根据自己的需求去写
+bucket = oss2.Bucket(auth, endpoint, 'se-teamwork-backend')  # 项目名称
+
+# 这个是上传图片后阿里云返回的uri需要拼接下面这个url才可以访问，根据自己情况去写这步
+base_file_url = 'https://se-teamwork-backend.oss-cn-beijing.aliyuncs.com/'
 
 
 @csrf_exempt
@@ -261,8 +279,7 @@ def get_posts_by_group_id(request):
     """
     if request.method == 'GET':
         group_id = request.GET.get('group_id')
-        curr_group = Group.objects.get(id=group_id)
-        posts = curr_group.posts.all()
+        posts = Post.objects.filter(group_id=group_id)
         posts = sorted(posts, key=lambda post: post.post_heat, reverse=True)
         return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), posts))})
     else:
@@ -483,7 +500,6 @@ def get_post_info_by_key(request):
                 return False
         return True
 
-
     if request.method == 'GET':
         info = {
             'group_id': request.GET.get('group_id'),
@@ -541,3 +557,82 @@ def get_post_info(request):
         return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), posts))})
     else:
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
+
+
+def apply_group_admin(request):
+    """
+    申请管理员身份
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+    if request.method == 'POST':
+
+        group_id = request.POST.get('group_id')
+        if group_id is None or group_id == '':
+            return JsonResponse({'errno': 2, 'msg': '必填字段为空'})
+        group = Group.objects.get(id=group_id)
+        if group is None:
+            return JsonResponse({'errno': 3, 'msg': '找不到小組'})
+        # find whether the user is in the group or not using Group_Member table
+        group_member = Group_Members.objects.filter(group_id=group_id, user_id=request.session.get('user_id'))
+        if len(group_member) == 0:
+            return JsonResponse({'errno': 4, 'msg': '您不是这个小组的成员'})
+        if group_member[0].is_admin:
+            return JsonResponse({'errno': 5, 'msg': '您已经是管理员了'})
+        # set is admin to true
+        group_member[0].is_admin = True
+        group_member[0].save()
+        return JsonResponse({'errno': 0, 'msg': '申請成功'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
+
+
+# 进度条
+# 当无法确定待上传的数据长度时，total_bytes的值为None。
+def percentage(consumed_bytes, total_bytes):
+    if total_bytes:
+        rate = int(100 * (float(consumed_bytes) / float(total_bytes)))
+        print('\r{0}% '.format(rate), end='')
+
+
+def update_fil_file(file):
+    """
+    ！ 上传单张图片
+    :param file: b字节文件
+    :return: 若成功返回图片路径，若不成功返回空
+    """
+    # 生成文件编号，如果文件名重复的话在oss中会覆盖之前的文件
+    number = uuid.uuid4()
+    # 生成文件名
+    base_fil_name = str(number) + '.mp4'
+    # 生成外网访问的文件路径
+    file_name = base_file_url + base_fil_name
+    # 这个是阿里提供的SDK方法 bucket是调用的4.1中配置的变量名
+    res = bucket.put_object(base_fil_name, file, progress_callback=percentage)
+    # 如果上传状态是200 代表成功 返回文件外网访问路径
+    # 下面代码根据自己的需求写
+    if res.status == 200:
+        return file_name
+    else:
+        return False
+
+
+@csrf_exempt
+@login_required
+def upload_img(request):
+    """
+    返回上传图片的url
+    @param request:
+    @return:
+    """
+    if request.method == 'POST':
+        # 获取前端ajax传的文件 使用read()读取b字节文件
+        file = request.FILES.get('file').read()
+        # 通过上面封装的方法把文件上传
+        file_url = update_fil_file(file)
+        print(file_url)
+        return JsonResponse({'errno': 0, 'msg': '上传成功', 'data': file_url})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
+
+

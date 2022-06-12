@@ -159,15 +159,6 @@ def create_topic(request):
         return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})
 
 
-def save_to_frontend(path, file):
-    """
-    将文件保存到前端的静态文件目录
-    :param path: str
-    :param file: File
-    """
-    with open(f'{path}/{file.name}', 'wb') as f:
-        for chunk in file.chunks():
-            f.write(chunk)
 
 
 @csrf_exempt
@@ -199,7 +190,9 @@ def write_diary(request):
         diary_content = request.POST.get('diary_content')
         if not diary_content or diary_content == '':
             return JsonResponse({'errno': 5, "msg": "Diary content can't be empty."})
-        Diary.objects.create(topic_id=topic_id, diary_title=diary_title, diary_content=diary_content)
+        diary_cover= request.FILES.get('diary_cover')
+        Diary.objects.create(topic_id=topic_id, diary_title=diary_title, diary_content=diary_content,diary_img=diary_cover)
+        save_img_local('../se_teamwork/src/assets', diary_cover)
         return JsonResponse({'errno': 0, "msg": "You have sent a new diary."})
     else:
         return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})

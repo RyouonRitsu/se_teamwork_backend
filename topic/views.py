@@ -192,7 +192,7 @@ def write_diary(request):
             return JsonResponse({'errno': 5, "msg": "Diary content can't be empty."})
         diary_cover= request.FILES.get('diary_cover')
         Diary.objects.create(topic_id=topic_id, diary_title=diary_title, diary_content=diary_content,diary_img=diary_cover)
-        save_img_local('../se_teamwork/src/assets', diary_cover)
+        save_to_frontend('../se_teamwork/src/assets', diary_cover)
         return JsonResponse({'errno': 0, "msg": "You have sent a new diary."})
     else:
         return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})

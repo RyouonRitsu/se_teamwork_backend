@@ -45,6 +45,7 @@ class Diary(models.Model):
     likes = models.IntegerField(default=0)
     dislikes = models.IntegerField(default=0)
     diary_num_comments = models.IntegerField(default=0)
+    diary_img = models.ImageField(upload_to='diary_img', blank=True, null=True)
 
     def __str__(self):
         return self.diary_title

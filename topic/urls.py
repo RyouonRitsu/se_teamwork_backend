@@ -31,4 +31,6 @@ urlpatterns = [
     path('get_diary_info', get_diary_info),
     path('get_topic_info', get_topic_info),
     path('get_topic_info_by_key', get_topic_info_by_key),
+    path('upload_img', upload_img),
+    path('save_img_local', save_img_local),
 ]

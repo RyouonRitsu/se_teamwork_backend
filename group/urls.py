@@ -33,4 +33,8 @@ urlpatterns = [
     path('get_post_info_by_key', get_post_info_by_key),
     path('apply_group_admin', apply_group_admin),
     path('upload_img', upload_img),
+    path('top_post_by_id', top_post_by_id),
+    path('get_top_posts', get_top_posts),
+    path('feature_post_by_id', feature_post_by_id),
+    path('get_feature_posts', get_featured_posts),
 ]

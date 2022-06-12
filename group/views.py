@@ -627,7 +627,7 @@ def upload_img(request):
     """
     if request.method == 'POST':
         # 获取前端ajax传的文件 使用read()读取b字节文件
-        file = request.FILES.get('file').read()
+        file = request.FILES.get('img').read()
         # 通过上面封装的方法把文件上传
         file_url = update_fil_file(file)
         print(file_url)
@@ -635,4 +635,102 @@ def upload_img(request):
     else:
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
 
+def save_to_frontend(path, file):
+    """
+    将文件保存到前端的静态文件目录
+    :param path: str
+    :param file: File
+    """
+    with open(f'{path}/{file.name}', 'wb') as f:
+        for chunk in file.chunks():
+            f.write(chunk)
+
+# @csrf_exempt
+# @login_required
+# def upload_img_local(request):
+#     """
+#     上传图片到本地
+#     @param request:
+#     @return:
+#     """
+#     if request.method == 'POST':
+#         img=request.FILES.get('img')
+
+@csrf_exempt
+@login_required
+@admin_required
+def top_post_by_id(request):
+    """
+    置顶帖子
+    @param request:
+    @return:
+    """
+    if request.method == 'POST':
+        post_id = request.POST.get('post_id')
+        if post_id is None or post_id == '':
+            return JsonResponse({'errno': 2, 'msg': '必填字段为空'})
+        post = Post.objects.get(id=post_id)
+        if post is None:
+            return JsonResponse({'errno': 3, 'msg': '找不到帖子'})
+        post.is_top = True
+        post.save()
+        return JsonResponse({'errno': 0, 'msg': '置顶成功'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
+
+@csrf_exempt
+@login_required
+def get_top_posts(request):
+    """
+    获取置顶帖子
+    @param request:
+    @return:
+    """
+    if request.method == 'GET':
+        posts = Post.objects.filter(is_top=True)
+        if len(posts) == 0:
+            return JsonResponse({'errno': 0, 'msg': '没有置顶帖子'})
+        return JsonResponse({'errno': 0, 'msg': '获取成功', 'data': list(map(lambda x: x.to_dict(), posts))})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
+
+
+@csrf_exempt
+@login_required
+@admin_required
+def feature_post_by_id(request):
+    """
+    置顶帖子
+    @param request:
+    @return:
+    """
+    if request.method == 'POST':
+        post_id = request.POST.get('post_id')
+        if post_id is None or post_id == '':
+            return JsonResponse({'errno': 2, 'msg': '必填字段为空'})
+        post = Post.objects.get(id=post_id)
+        if post is None:
+            return JsonResponse({'errno': 3, 'msg': '找不到帖子'})
+        post.is_featured = True
+        post.save()
+        return JsonResponse({'errno': 0, 'msg': '置顶成功'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
+
+
+@csrf_exempt
+@login_required
+def get_featured_posts(request):
+    """
+    获取置顶帖子
+    @param request:
+    @return:
+    """
+    if request.method == 'GET':
+        posts = Post.objects.filter(is_featured=True)
+        if len(posts) == 0:
+            return JsonResponse({'errno': 0, 'msg': '没有置顶帖子'})
+        return JsonResponse({'errno': 0, 'msg': '获取成功', 'data': list(map(lambda x: x.to_dict(), posts))})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
 

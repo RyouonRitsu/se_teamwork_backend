@@ -37,4 +37,7 @@ urlpatterns = [
     path('get_top_posts', get_top_posts),
     path('feature_post_by_id', feature_post_by_id),
     path('get_feature_posts', get_featured_posts),
+    path('save_img_local', save_img_local),
+    path('get_members_by_user_id',get_members_by_user_id ),
+    path('get_members_by_group_id',get_members_by_group_id ),
 ]

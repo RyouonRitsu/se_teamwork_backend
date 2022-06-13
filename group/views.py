@@ -1,11 +1,13 @@
-from django.http import JsonResponse, HttpResponse
+from datetime import datetime
+
+from django.contrib.messages.storage import session
 from django.shortcuts import render
 
 # Create your views here.
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from topic.models import Topic, Topic_Members, Diary
-
+from group.models import Group, Post, Group_Members
 from account.views import login_required
 from book.views import admin_required
 import uuid
@@ -29,320 +31,377 @@ base_file_url = 'https://se-teamwork-backend.oss-cn-beijing.aliyuncs.com/'
 
 
 @csrf_exempt
-def get_topic_by_id(request):
+def get_group_by_id(request):
     """
-    接受get请求，返回话题信息
+    返回给定的小组id对应的组的信息
     :param request:
-    :param topic_id:
+    :param group_id:
     :return:
     """
     if request.method == 'GET':
-        topic_id = request.GET.get('topic_id')
-        curr_topic = Topic.objects.get(id=topic_id)
-        curr_topic.topic_heat += 1
-        curr_topic.save()
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [curr_topic.to_dict()]})
+        group_id = request.GET.get('group_id')
+        curr_group = Group.objects.get(id=group_id)
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [curr_group.to_dict()]})
     else:
-        return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})
+        return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
 
 
 @csrf_exempt
-def get_all_topics(request):
+def get_all_groups(request):
     """
-    接受get请求，返回所有话题信息,并按热度排序
+    返回所有的小组信息，并将小组按照热度排序
     :param request:
     :return:
     """
     if request.method == 'GET':
-        all_topics = sorted(Topic.objects.all(), key=lambda topic: topic.topic_heat, reverse=True)
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), all_topics))})
+        all_groups = Group.objects.all()
+        all_groups = sorted(all_groups, key=lambda group: group.group_heat, reverse=True)
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), all_groups))})
     else:
-        return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})
+        return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
 
 
+# join a group_app by the group_app id
 @csrf_exempt
 @login_required
-def join_topic(request):
-    '''
-    接受post请求，加入话题
+def join_group(request):
+    """
+    接受Post请求，将当前用户加入给定的小组
     :param request:
-    :param topic_id:
+    :param group_id:
     :return:
-    '''
+    """
     if request.method == 'POST':
-        topic_id = request.POST.get('topic_id')
-        curr_topic = Topic.objects.get(id=topic_id)
-        if Topic_Members.objects.filter(user_id=request.session.get('user_id'), topic_id=topic_id).exists():
-            return JsonResponse({'errno': 2, "msg": "You have already joined the group."})
-        curr_topic.topic_num_members += 1
-        Topic_Members.objects.create(user_id=request.session.get('user_id'), topic_id=topic_id)
+        group_id = request.POST.get('group_id')
+        curr_group = Group.objects.get(id=group_id)
+        # if the user_id and group_id already exist in the Group_Members table,
+        # then the user has already joined the group_app
+        if Group_Members.objects.filter(user_id=request.session.get('user_id'), group_id=group_id).exists():
+            return JsonResponse({'errno': 2, 'msg': 'You have already joined this group.'})
+        curr_group.group_num_members += 1
+        Group_Members.objects.create(group_id=group_id, user_id=request.session.get('user_id'))
         # save what we have done
-        curr_topic.save()
-        return JsonResponse({'errno': 0, "msg": "You have joined the group_app."})
+        curr_group.save()
+        return JsonResponse({'errno': 0, 'msg': 'success'})
     else:
-        return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})
+        return JsonResponse({'errno': 1, 'msg': 'Only POST method is allowed.'})
 
 
+# leave a group_app we have joined by the group_app id
 @csrf_exempt
 @login_required
-def get_all_topics_by_user(request):
+def leave_group(request):
     """
-    接受get请求，返回当前用户关注的所有话题
+    将当前用户从给定的小组中移除
     :param request:
-    :param user_id:
-    :return:
-    """
-    if request.method == 'GET':
-        user_id = request.session.get('user_id')
-        topic_ids = Topic_Members.objects.filter(user_id=user_id).values_list('topic_id', flat=True)
-        topics = Topic.objects.filter(id__in=topic_ids)
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), topics))})
-    else:
-        return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})
-
-
-@csrf_exempt
-@login_required
-def leave_topic(request):
-    """
-    接受post请求，退出话题
-    :param request:
-    :param topic_id:
+    :param group_id:
     :return:
     """
     if request.method == 'POST':
-        topic_id = request.POST.get('topic_id')
-        curr_topic = Topic.objects.get(id=topic_id)
-        if not Topic_Members.objects.filter(user_id=request.session.get('user_id'), topic_id=topic_id).exists():
-            return JsonResponse({'errno': 2, "msg": "You have already left the group."})
-        curr_topic.topic_num_members -= 1
-        Topic_Members.objects.filter(user_id=request.session.get('user_id'), topic_id=topic_id).delete()
-        # save what we have done
-        curr_topic.save()
-        return JsonResponse({'errno': 0, "msg": "You have left the group_app."})
+        group_id = request.POST.get('group_id')
+        curr_group = Group.objects.get(id=group_id)
+        if not Group_Members.objects.filter(user_id=request.session.get('user_id'), group_id=group_id).exists():
+            return JsonResponse({'errno': 2, 'msg': 'You have not joined this group.'})
+        curr_group.group_num_members -= 1
+        curr_group.save()
+        Group_Members.objects.filter(user_id=request.session.get('user_id'), group_id=group_id).delete()
+        return JsonResponse({'errno': 0, 'msg': 'success'})
     else:
-        return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})
+        return JsonResponse({'errno': 1, 'msg': 'Only POST method is allowed.'})
 
 
-@csrf_exempt
-@admin_required
-def create_topic(request):
-    """
-    接受post请求，创建话题
-    :param request:
-    :return:
-    error_code:
-        0: success
-        1: only post method is allowed
-        2: topic name cannot be empty
-        3: topic name too long
-        4: topic name already exists
-        5: topic description too long
-    """
-    if request.method == 'POST':
-        topic_name = request.POST.get('topic_name')
-        if not topic_name or topic_name == '':
-            return JsonResponse({'errno': 2, "msg": "Topic name can't be empty."})
-        if len(topic_name) > 200:
-            return JsonResponse({'errno': 3, "msg": "Topic name is too long."})
-        if Topic.objects.filter(topic_name=topic_name).exists():
-            return JsonResponse({'errno': 4, "msg": "The topic_name has already existed."})
-        topic_description = request.POST.get('topic_description')
-        if len(topic_description) > 200:
-            return JsonResponse({'errno': 5, "msg": "The topic_description is too long."})
-        topic_num_members = 0
-        topic_heat = 0
-        Topic.objects.create(topic_name=topic_name, topic_description=topic_description,
-                             topic_num_members=topic_num_members, topic_heat=topic_heat)
-        return JsonResponse({'errno': 0, "msg": "You have created a new group_app."})
-    else:
-        return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})
-
-
-
-
+# create a group_app by the group_app name and description
 @csrf_exempt
 @login_required
-def write_diary(request):
+def create_group(request):
     """
-    接受post请求，发送日记
+    接受Post请求，创建一个小组,创建者为管理员
     :param request:
-    :param topic_id:
     :return:
     error code:
     0: success
-    1: only post method is allowed
-    2: you have not joined the group
-    3: the diary title can't be empty
-    4: the diary title is too long
-    5: the diary can't be empty
+    1: only POST method is allowed
+    2: group name too long
+    3: group name is empty
+    4: group name already exists
+    5: group description too long
+    6: group picture is empty
     """
     if request.method == 'POST':
-        topic_id = request.POST.get('topic_id')
-        user_id = request.session.get('user_id')
-        if not Topic_Members.objects.filter(user_id=user_id, topic_id=topic_id).exists():
-            return JsonResponse({'errno': 2, "msg": "You have not joined the topic."})
-        diary_title = request.POST.get('diary_title')
-        if not diary_title or diary_title == '':
-            return JsonResponse({'errno': 3, "msg": "Diary title can't be empty."})
-        if len(diary_title) > 200:
-            return JsonResponse({'errno': 4, "msg": "Diary title is too long."})
-        diary_content = request.POST.get('diary_content')
-        if not diary_content or diary_content == '':
-            return JsonResponse({'errno': 5, "msg": "Diary content can't be empty."})
-        diary_cover= request.FILES.get('diary_cover')
-        Diary.objects.create(topic_id=topic_id, diary_title=diary_title, diary_content=diary_content,diary_img=diary_cover)
-        save_to_frontend('../se_teamwork/src/assets', diary_cover)
-        return JsonResponse({'errno': 0, "msg": "You have sent a new diary."})
+        group_name = request.POST['group_name']
+
+        if len(group_name) > 200:
+            return JsonResponse({'errno': 2, 'msg': 'Group name is too long.'})
+
+        if not group_name or group_name == '':
+            return JsonResponse({'errno': 3, 'msg': 'Group name is empty.'})
+
+        if Group.objects.filter(group_name=group_name).exists():
+            return JsonResponse({'errno': 4, 'msg': 'Group name already exists.'})
+
+        group_description = request.POST['group_description']
+        if len(group_description) > 200:
+            return JsonResponse({'errno': 5, 'msg': 'Group description is too long.'})
+        group_rules = request.POST['group_rules']
+
+        group_picture_url = request.POST['group_picture_url']
+        if group_picture_url == '' or not group_picture_url:
+            return JsonResponse({'errno': 6, 'msg': 'Group picture url is empty.'})
+
+        # current user is one of the admins of the group
+        group = Group(group_name=group_name, group_description=group_description, group_rules=group_rules,
+                      group_picture_url=group_picture_url, group_num_members=1)
+
+        Group_Members.objects.create(group_id=group.id, user_id=request.session.get('user_id'), is_admin=True)
+        # save what we have done to the database
+        group.save()
+        return JsonResponse({'errno': 0, 'msg': 'success'})
     else:
-        return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})
+        return JsonResponse({'errno': 1, 'msg': 'Only POST method is allowed.'})
 
 
+# a function return all the groups that the user has joined
 @csrf_exempt
 @login_required
-def like_diary(request):
+def get_groups_by_user(request):
     """
-    接受post请求，点赞日记
+    接受Get请求，返回所有当前用户加入的小组
     :param request:
-    :param diary_id:
-    :return:
-    """
-    if request.method == 'POST':
-        diary_id = request.POST.get('diary_id')
-        curr_diary = Diary.objects.get(id=diary_id)
-        curr_diary.likes += 1
-        curr_diary.save()
-        return JsonResponse({'errno': 0, "msg": "You have liked the diary."})
-    else:
-        return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})
-
-
-@csrf_exempt
-@login_required
-def dislike_diary(request):
-    """
-    接受post请求，点赞日记
-    :param request:
-    :param diary_id:
-    :return:
-    """
-    if request.method == 'POST':
-        diary_id = request.POST.get('diary_id')
-        curr_diary = Diary.objects.get(id=diary_id)
-        curr_diary.dislikes += 1
-        curr_diary.save()
-        return JsonResponse({'errno': 0, "msg": "You have disliked the diary."})
-    else:
-        return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})
-
-
-@csrf_exempt
-def get_all_diary_by_heat(request):
-    """
-    接受get请求，获取话题下的所有日记
-    :param request:
-    :param topic_id:
-    :return:
-    """
-    if request.method == 'GET':
-        topic_id = request.GET.get('topic_id')
-        diaries = Diary.objects.filter(topic_id=topic_id)
-        diaries = diaries.order_by('-diary_heat')
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), diaries))})
-    else:
-        return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})
-
-
-@csrf_exempt
-def get_all_diary_by_time(request):
-    """
-    接受get请求，获取话题下的所有日记
-    :param request:
-    :param topic_id:
-    :return:
-    """
-    if request.method == 'GET':
-        topic_id = request.GET.get('topic_id')
-        diaries = Diary.objects.filter(topic_id=topic_id)
-        diaries = diaries.order_by('-diary_create_time')
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), diaries))})
-    else:
-        return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})
-
-
-@csrf_exempt
-def get_diary_by_author_id(request):
-    """
-    接受get请求，获取当前作者所写的所有日记
-    :param request:
-    :param diary_id:
     :return:
     """
     if request.method == 'GET':
         user_id = request.session.get('user_id')
-        diaries = Diary.objects.filter(diary_authorId=user_id)
-        diaries = diaries.order_by('-diary_create_time')
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), diaries))})
+        # get all the group_id that the user has joined
+        group_ids = Group_Members.objects.filter(user_id=user_id).values_list('group_id', flat=True)
+        # get all the groups that id in the group_ids
+        groups = Group.objects.filter(id__in=group_ids)
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), groups))})
     else:
-        return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})
+        return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
 
 
+# a function to send a post to a group_app if the user is in the group_app
 @csrf_exempt
-def get_diary_by_id(request):
+def get_post_by_id(request):
     """
-    接受get请求，获取指定日记
+    接受Get请求，返回给定帖子id对应的帖子的详细信息
     :param request:
-    :param diary_id:
+    :param group_id:
+    :param post_id:
     :return:
     """
     if request.method == 'GET':
-        diary_id = request.GET.get('diary_id')
-        diary = Diary.objects.get(id=diary_id)
-        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [diary.to_dict()]})
+        post_id = request.GET.get('post_id')
+        post = Post.objects.get(id=post_id)
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [post.to_dict()]})
     else:
-        return JsonResponse({'errno': 1, "msg": "Only GET method is allowed."})
+        return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
 
 
 @csrf_exempt
-def diary_heat_add(request):
+@login_required
+def send_post(request):
     """
-    接受post请求，对应的日记的热度加一
+    接受Post请求，发送一个帖子到给定的小组
     :param request:
-    :param diary_id:
+    :param group_id:
+    :return:
+    error code:
+    0: success
+    1: only POST method is allowed
+    2: you are not in the group
+    3: post title is empty
+    4: post title is too long
+    5: post content is empty
+    """
+    if request.method == 'POST':
+        group_id = request.POST.get('group_id')
+        curr_group = Group.objects.get(id=group_id)
+        # if the user_id and group_id already exists in the Group_Members table, then send the post
+        if Group_Members.objects.filter(user_id=request.session.get('user_id'), group_id=group_id).exists():
+            group_id = curr_group.id
+            post_title = request.POST['post_title']
+            if post_title == '' or not post_title:
+                return JsonResponse({'errno': 3, 'msg': 'Post title is empty.'})
+            if len(post_title) > 200:
+                return JsonResponse({'errno': 4, 'msg': 'Post title is too long.'})
+            post_content = request.POST['post_content']
+            if post_content == '' or not post_content:
+                return JsonResponse({'errno': 5, 'msg': 'Post content is empty.'})
+            post_author = request.session.get('user_id')
+            post_cover = request.FILES.get('post_cover')
+
+            post = Post(group_id=group_id, post_title=post_title, post_content=post_content,
+                        post_authorId=post_author, post_img=post_cover)
+            post.save()
+            curr_group.num_of_posts += 1
+            save_to_frontend('../se_teamwork/src/assets', post.post_img)
+            return JsonResponse({'errno': 0, 'msg': 'success'})
+        else:
+            return JsonResponse({'errno': 2, 'msg': 'You are not in the group_app.'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': 'Only POST method is allowed.'})
+
+
+@csrf_exempt
+@login_required
+def remove_post(request):
+    """
+    接受Post请求，删除给定帖子
+    :param request:
+    :param post_id:
     :return:
     """
     if request.method == 'POST':
-        diary_id = request.POST.get('diary_id')
-        diary = Diary.objects.get(id=diary_id)
-        diary.diary_heat += 1
-        diary.save()
-        return JsonResponse({'errno': 0, "msg": "You have liked the diary."})
+        post_id = request.POST.get('post_id')
+        # get the group_app of the post
+        curr_post = Post.objects.get(id=post_id)
+        group_id = curr_post.group_id
+        curr_group = Group.objects.get(id=group_id)
+        # check if the user is the admin of the group or the author of the post
+        if request.session.get('user_id') == curr_post.post_authorId or request.session.get(
+                'user_id') in Group_Members.objects.filter(group_id=group_id, is_admin=True):
+            curr_post.delete()
+            curr_group.num_of_posts -= 1
+            curr_group.save()
+            return JsonResponse({'errno': 0, 'msg': 'success'})
+        else:
+            return JsonResponse(
+                {'errno': 2, 'msg': 'You are not the author of the post or the admin of the group_app.'})
     else:
-        return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})
+        return JsonResponse({'errno': 1, 'msg': 'Only POST method is allowed.'})
 
 
 @csrf_exempt
-def topic_heat_add(request):
+def get_posts_by_group_id(request):
     """
-    接受post请求，对应的话题的热度加一
+    接受Get请求，返回给定小组的所有帖子
     :param request:
-    :param topic_id:
+    :param group_id:
+    :return:
+    """
+    if request.method == 'GET':
+        group_id = request.GET.get('group_id')
+        posts = Post.objects.filter(group_id=group_id)
+        posts = sorted(posts, key=lambda post: post.post_heat, reverse=True)
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), posts))})
+    else:
+        return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
+
+
+# a function to remove a post by the post id if the user is the admin of the group_app or the author of the post
+
+
+@csrf_exempt
+@login_required
+def get_posts_by_user(request):
+    """
+    接受Get请求，返回所有当前用户发布的帖子
+    :param request:
+    :return:
+    """
+    if request.method == 'GET':
+        user_id = request.session.get('user_id')
+        posts = Post.objects.filter(post_authorId=user_id)
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': list(map(lambda x: x.to_dict(), posts))})
+    else:
+        return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
+
+
+# like the post by the user
+@csrf_exempt
+@login_required
+def like_post(request):
+    """
+    接受Post请求，给给定帖子点赞
+    :param request:
+    :param post_id:
+    """
+    if request.method == 'POST':
+        post_id = request.POST.get('post_id')
+        curr_post = Post.objects.get(id=post_id)
+        curr_post.post_heat += 1
+        curr_post.save()
+        return JsonResponse({'errno': 0, 'msg': 'success'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': 'Only POST method is allowed.'})
+
+
+# dislike the post by the user
+@csrf_exempt
+@login_required
+def dislike_post(request):
+    """
+    接受Post请求，给给定帖子点踩
+    :param request:
+    :param post_id:
+    """
+    if request.method == 'POST':
+        post_id = request.POST.get('post_id')
+        curr_post = Post.objects.get(id=post_id)
+        curr_post.post_heat -= 1
+        curr_post.save()
+        return JsonResponse({'errno': 0, 'msg': 'success'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': 'Only POST method is allowed.'})
+
+
+@csrf_exempt
+def get_post_by_id(request):
+    """
+    接受Get请求，返回给定帖子的详细信息
+    :param request:
+    :param post_id:
+    :return:
+    """
+    if request.method == 'GET':
+        post_id = request.GET.get('post_id')
+        curr_post = Post.objects.get(id=post_id)
+        return JsonResponse({'errno': 0, 'msg': 'success', 'data': [curr_post.to_dict()]})
+    else:
+        return JsonResponse({'errno': 1, 'msg': 'Only GET method is allowed.'})
+
+
+@csrf_exempt
+def group_heat_add(request):
+    """
+    接受Post请求，增加给定小组的热度
+    :param request:
+    :param group_id:
     :return:
     """
     if request.method == 'POST':
-        topic_id = request.POST.get('topic_id')
-        topic = Topic.objects.get(id=topic_id)
-        topic.topic_heat += 1
-        topic.save()
-        return JsonResponse({'errno': 0, "msg": "You have liked the topic."})
+        group_id = request.POST.get('group_id')
+        curr_group = Group.objects.get(id=group_id)
+        curr_group.group_heat += 1
+        curr_group.save()
+        return JsonResponse({'errno': 0, 'msg': 'success'})
     else:
-        return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})
+        return JsonResponse({'errno': 1, 'msg': 'Only POST method is allowed.'})
 
 
 @csrf_exempt
-def get_topic_info_by_key(request):
+def post_heat_add(request):
     """
-    取得指定屬性同時包含指定關鍵詞的信息对应话题信息, 只接受GET請求, Params格式為:
+    接受Post请求，增加给定帖子的热度
+    :param request:
+    :param group_id:
+    :return:
+    """
+    if request.method == 'POST':
+        post_id = request.POST.get('post_id')
+        curr_post = Post.objects.get(id=post_id)
+        curr_post.post_heat += 1
+        curr_post.save()
+        return JsonResponse({'errno': 0, 'msg': 'success'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': 'Only POST method is allowed.'})
+
+
+@csrf_exempt
+def get_group_info_by_key(request):
+    """
+    取得指定屬性同時包含指定關鍵詞的信息的對應小组信息, 只接受GET請求, Params格式為:
     ?屬性名=關鍵詞[&...]
     :param request: WSGIRequest
     :return: JsonResponse
@@ -356,24 +415,26 @@ def get_topic_info_by_key(request):
 
     if request.method == 'GET':
         info = {
-            'topic_name': request.GET.get('topic_name'),
-            'topic_description': request.GET.get('topic_description'),
-            'topic_num_members': request.GET.get('topic_num_members'),
-            'topic_heat': request.GET.get('topic_heat'),
-            'topic_create_date': request.GET.get('topic_create_date'),
+            'group_name': request.GET.get('group_name'),
+            'group_description': request.GET.get('group_description'),
+            'group_created_date': request.GET.get('group_created_date'),
+            'group_num_members': request.GET.get('group_num_members'),
+            'group_heat': request.GET.get('group_heat'),
+            'group_rules': request.GET.get('group_rules'),
+            'num_of_posts': request.GET.get('num_of_posts'),
         }
         if not any(info.values()):
             return JsonResponse({'errno': 2, 'msg': '必填字段為空'})
-        topics = list(filter(lambda x: __search(info, x), Topic.objects.all()))
-        if len(topics) == 0:
+        groups = list(filter(lambda x: __search(info, x), Group.objects.all()))
+        if len(groups) == 0:
             return JsonResponse({'errno': 3, 'msg': '找不到符合條件的結果'})
-        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), topics))})
+        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), groups))})
     else:
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
 
 
 @csrf_exempt
-def get_topic_info(request, raw=False):
+def get_group_info(request, raw=False):
     """
     根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分割\n
     只要滿足屬性中同時包含所有關鍵字的書籍都會被選出\n
@@ -398,16 +459,16 @@ def get_topic_info(request, raw=False):
         keyword = request.GET.get('keyword')
         if keyword is None or keyword == '':
             if raw:
-                return list(map(lambda x: x.to_dict(), Topic.objects.all()))
+                return list(map(lambda x: x.to_dict(), Group.objects.all()))
             return JsonResponse(
-                {'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), Topic.objects.all()))}
+                {'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), Group.objects.all()))}
             )
         keywords = str(keyword).split(',')
-        topics = list(filter(lambda x: __search(keywords, x), Topic.objects.all()))
+        groups = list(filter(lambda x: __search(keywords, x), Group.objects.all()))
         sort_by = request.GET.get('sort_by')
         reverse = request.GET.get('reverse')
         if sort_by:
-            if sort_by not in Topic.__dict__:
+            if sort_by not in Group.__dict__:
                 if raw:
                     return []
                 return JsonResponse({'errno': 934, 'msg': '排序字段不存在'})
@@ -416,21 +477,21 @@ def get_topic_info(request, raw=False):
             else:
                 reverse = False
             if sort_by == 'heat':
-                sort_by = 'topic_heat'
-            topics.sort(key=lambda x: (x.__dict__[sort_by], x.topic_heat, x.id), reverse=reverse)
+                sort_by = 'group_heat'
+            groups.sort(key=lambda x: (x.__dict__[sort_by], x.group_heat, x.id), reverse=reverse)
         if raw:
-            return list(map(lambda x: x.to_dict(), topics))
-        if len(topics) == 0:
+            return list(map(lambda x: x.to_dict(), groups))
+        if len(groups) == 0:
             return JsonResponse({'errno': 2, 'msg': '找不到符合條件的結果'})
-        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), topics))})
+        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), groups))})
     else:
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
 
 
 @csrf_exempt
-def get_diary_info_by_key(request):
+def get_post_info_by_key(request):
     """
-    取得指定屬性同時包含指定關鍵詞的信息对应话题信息, 只接受GET請求, Params格式為:
+    取得指定屬性同時包含指定關鍵詞的信息的對應小组信息, 只接受GET請求, Params格式為:
     ?屬性名=關鍵詞[&...]
     :param request: WSGIRequest
     :return: JsonResponse
@@ -444,27 +505,28 @@ def get_diary_info_by_key(request):
 
     if request.method == 'GET':
         info = {
-            'diary_title': request.GET.get('diary_title'),
-            'diary_content': request.GET.get('diary_content'),
-            'diary_create_time': request.GET.get('diary_create_time'),
-            'diary_heat': request.GET.get('diary_heat'),
-            'diary_authorId': request.GET.get('diary_authorId'),
+            'group_id': request.GET.get('group_id'),
+            'post_title': request.GET.get('post_title'),
+            'post_content': request.GET.get('post_content'),
+            'post_create_time': request.GET.get('post_create_time'),
+            'post_heat': request.GET.get('post_heat'),
+            'post_num_comments': request.GET.get('post_num_comments'),
+            'post_authorId': request.GET.get('post_authorId'),
             'likes': request.GET.get('likes'),
             'dislikes': request.GET.get('dislikes'),
-            'diary_num_comments': request.GET.get('diary_num_comments'),
         }
         if not any(info.values()):
             return JsonResponse({'errno': 2, 'msg': '必填字段為空'})
-        diaries = list(filter(lambda x: __search(info, x), Diary.objects.all()))
-        if len(diaries) == 0:
+        posts = list(filter(lambda x: __search(info, x), Post.objects.all()))
+        if len(posts) == 0:
             return JsonResponse({'errno': 3, 'msg': '找不到符合條件的結果'})
-        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), diaries))})
+        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), posts))})
     else:
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
 
 
 @csrf_exempt
-def get_diary_info(request):
+def get_post_info(request):
     """
     根據關鍵字進行模糊搜索, 每個關鍵字之間使用','分割\n
     只要滿足屬性中同時包含所有關鍵字的書籍都會被選出\n
@@ -489,15 +551,43 @@ def get_diary_info(request):
         keyword = request.GET.get('keyword')
         if keyword is None or keyword == '':
             return JsonResponse(
-                {'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), Diary.objects.all()))}
+                {'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), Post.objects.all()))}
             )
         keywords = str(keyword).split(',')
-        diaries = list(filter(lambda x: __search(keywords, x), Diary.objects.all()))
-        if len(diaries) == 0:
+        posts = list(filter(lambda x: __search(keywords, x), Post.objects.all()))
+        if len(posts) == 0:
             return JsonResponse({'errno': 2, 'msg': '找不到符合條件的結果'})
-        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), diaries))})
+        return JsonResponse({'errno': 0, 'msg': '查詢成功', 'data': list(map(lambda x: x.to_dict(), posts))})
     else:
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
+
+
+def apply_group_admin(request):
+    """
+    申请管理员身份
+    :param request: WSGIRequest
+    :return: JsonResponse
+    """
+    if request.method == 'POST':
+
+        group_id = request.POST.get('group_id')
+        if group_id is None or group_id == '':
+            return JsonResponse({'errno': 2, 'msg': '必填字段为空'})
+        group = Group.objects.get(id=group_id)
+        if group is None:
+            return JsonResponse({'errno': 3, 'msg': '找不到小組'})
+        # find whether the user is in the group or not using Group_Member table
+        group_member = Group_Members.objects.filter(group_id=group_id, user_id=request.session.get('user_id'))
+        if len(group_member) == 0:
+            return JsonResponse({'errno': 4, 'msg': '您不是这个小组的成员'})
+        if group_member[0].is_admin:
+            return JsonResponse({'errno': 5, 'msg': '您已经是管理员了'})
+        # set is admin to true
+        group_member[0].is_admin = True
+        group_member[0].save()
+        return JsonResponse({'errno': 0, 'msg': '申請成功'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
 
 
 # 进度条
@@ -540,7 +630,7 @@ def upload_img(request):
     """
     if request.method == 'POST':
         # 获取前端ajax传的文件 使用read()读取b字节文件
-        file = request.FILES.get('file').read()
+        file = request.FILES.get('img').read()
         # 通过上面封装的方法把文件上传
         file_url = update_fil_file(file)
         print(file_url)
@@ -548,6 +638,86 @@ def upload_img(request):
     else:
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
 
+
+@csrf_exempt
+@login_required
+@admin_required
+def top_post_by_id(request):
+    """
+    置顶帖子
+    @param request:
+    @return:
+    """
+    if request.method == 'POST':
+        # check if current user is admin of the group
+        post_id = request.POST.get('post_id')
+        if post_id is None or post_id == '':
+            return JsonResponse({'errno': 2, 'msg': '必填字段为空'})
+        post = Post.objects.get(id=post_id)
+        if post is None:
+            return JsonResponse({'errno': 3, 'msg': '找不到帖子'})
+        post.is_top = True
+        post.save()
+        return JsonResponse({'errno': 0, 'msg': '置顶成功'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
+
+
+@csrf_exempt
+@login_required
+def get_top_posts(request):
+    """
+    获取置顶帖子
+    @param request:
+    @return:
+    """
+    if request.method == 'GET':
+        posts = Post.objects.filter(is_top=True)
+        if len(posts) == 0:
+            return JsonResponse({'errno': 0, 'msg': '没有置顶帖子'})
+        return JsonResponse({'errno': 0, 'msg': '获取成功', 'data': list(map(lambda x: x.to_dict(), posts))})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
+
+
+@csrf_exempt
+@login_required
+@admin_required
+def feature_post_by_id(request):
+    """
+    置顶帖子
+    @param request:
+    @return:
+    """
+    if request.method == 'POST':
+        post_id = request.POST.get('post_id')
+        if post_id is None or post_id == '':
+            return JsonResponse({'errno': 2, 'msg': '必填字段为空'})
+        post = Post.objects.get(id=post_id)
+        if post is None:
+            return JsonResponse({'errno': 3, 'msg': '找不到帖子'})
+        post.is_featured = True
+        post.save()
+        return JsonResponse({'errno': 0, 'msg': '置顶成功'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
+
+
+@csrf_exempt
+@login_required
+def get_featured_posts(request):
+    """
+    获取置顶帖子
+    @param request:
+    @return:
+    """
+    if request.method == 'GET':
+        posts = Post.objects.filter(is_featured=True)
+        if len(posts) == 0:
+            return JsonResponse({'errno': 0, 'msg': '没有置顶帖子'})
+        return JsonResponse({'errno': 0, 'msg': '获取成功', 'data': list(map(lambda x: x.to_dict(), posts))})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
 
 
 def save_to_frontend(path, file):
@@ -560,6 +730,7 @@ def save_to_frontend(path, file):
         for chunk in file.chunks():
             f.write(chunk)
 
+
 def save_img_local(request):
     """
     保存图片到本地
@@ -569,10 +740,40 @@ def save_img_local(request):
     if request.method == 'POST':
         id = request.POST.get('id')
         file = request.FILES.get('file')
-        curr_diary = Diary.objects.get(id=id)
-        curr_diary.diary_img = file
-        curr_diary.save()
+        curr_post = Post.objects.get(id=id)
+        curr_post.diary_img = file
+        curr_post.save()
         save_to_frontend('../se_teamwork/src/assets', file)
         return JsonResponse({'errno': 0, 'msg': '上传成功'})
     else:
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
+
+
+@csrf_exempt
+def get_members_by_user_id(request):
+    """
+    获取用户表的对应信息
+    :param request:
+    :return:
+    """
+    if request.method == 'GET':
+        user_id = request.session.get('user_id')
+        group_members = Group_Members.objects.filter(user_id=user_id)
+        return JsonResponse({'errno': 0, 'msg': '获取成功', 'data': list(map(lambda x: x.to_dict(), group_members))})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})
+
+
+@csrf_exempt
+def get_members_by_group_id(request):
+    """
+    获取用户表的对应信息
+    :param request:
+    :return:
+    """
+    if request.method == 'GET':
+        group_id = request.GET.get('group_id')
+        group_members = Group_Members.objects.filter(group_id=group_id)
+        return JsonResponse({'errno': 0, 'msg': '获取成功', 'data': list(map(lambda x: x.to_dict(), group_members))})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受GET請求'})

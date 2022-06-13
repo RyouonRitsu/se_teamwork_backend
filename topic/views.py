@@ -192,7 +192,8 @@ def write_diary(request):
         curr_diary = Diary(topic_id=topic_id, diary_title=diary_title, diary_content=diary_content,
                            diary_img=diary_cover, diary_authorId=user_id)
         curr_diary.save()
-        save_to_frontend('../se_teamwork/src/assets/diary_img', diary_cover)
+        if (diary_cover):
+            save_to_frontend('../se_teamwork/src/assets/diary_img', diary_cover)
         return JsonResponse({'errno': 0, "msg": "You have sent a new diary."})
     else:
         return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})

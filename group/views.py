@@ -235,7 +235,8 @@ def send_post(request):
                         post_authorId=post_author, post_img=post_cover)
             post.save()
             curr_group.num_of_posts += 1
-            save_to_frontend('../se_teamwork/src/assets', post.post_img)
+            if (post_cover):
+                save_to_frontend('../se_teamwork/src/assets/', post.post_img)
             return JsonResponse({'errno': 0, 'msg': 'success'})
         else:
             return JsonResponse({'errno': 2, 'msg': 'You are not in the group_app.'})
@@ -641,7 +642,6 @@ def upload_img(request):
 
 @csrf_exempt
 @login_required
-@admin_required
 def top_post_by_id(request):
     """
     置顶帖子
@@ -657,11 +657,35 @@ def top_post_by_id(request):
         if post is None:
             return JsonResponse({'errno': 3, 'msg': '找不到帖子'})
         post.is_top = True
+        post.post_heat += 0x3f3f3f3f
         post.save()
         return JsonResponse({'errno': 0, 'msg': '置顶成功'})
     else:
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
 
+
+@csrf_exempt
+@login_required
+def untop_post_by_id(request):
+    """
+    取消置顶帖子
+    @param request:
+    @return:
+    """
+    if request.method == 'POST':
+        # check if current user is admin of the group
+        post_id = request.POST.get('post_id')
+        if post_id is None or post_id == '':
+            return JsonResponse({'errno': 2, 'msg': '必填字段为空'})
+        post = Post.objects.get(id=post_id)
+        if post is None:
+            return JsonResponse({'errno': 3, 'msg': '找不到帖子'})
+        post.is_top = False
+        post.post_heat -= 0x3f3f3f3f
+        post.save()
+        return JsonResponse({'errno': 0, 'msg': '取消置顶成功'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
 
 @csrf_exempt
 @login_required
@@ -682,10 +706,9 @@ def get_top_posts(request):
 
 @csrf_exempt
 @login_required
-@admin_required
 def feature_post_by_id(request):
     """
-    置顶帖子
+    加精帖子
     @param request:
     @return:
     """
@@ -698,7 +721,29 @@ def feature_post_by_id(request):
             return JsonResponse({'errno': 3, 'msg': '找不到帖子'})
         post.is_featured = True
         post.save()
-        return JsonResponse({'errno': 0, 'msg': '置顶成功'})
+        return JsonResponse({'errno': 0, 'msg': '加精成功'})
+    else:
+        return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
+
+
+@csrf_exempt
+@login_required
+def unfeature_post_by_id(request):
+    """
+    取消加精帖子
+    @param request:
+    @return:
+    """
+    if request.method == 'POST':
+        post_id = request.POST.get('post_id')
+        if post_id is None or post_id == '':
+            return JsonResponse({'errno': 2, 'msg': '必填字段为空'})
+        post = Post.objects.get(id=post_id)
+        if post is None:
+            return JsonResponse({'errno': 3, 'msg': '找不到帖子'})
+        post.is_featured = False
+        post.save()
+        return JsonResponse({'errno': 0, 'msg': '取消加精成功'})
     else:
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
 

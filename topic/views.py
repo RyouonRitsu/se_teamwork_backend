@@ -159,8 +159,6 @@ def create_topic(request):
         return JsonResponse({'errno': 1, "msg": "Only POST method is allowed."})
 
 
-
-
 @csrf_exempt
 @login_required
 def write_diary(request):
@@ -190,8 +188,10 @@ def write_diary(request):
         diary_content = request.POST.get('diary_content')
         if not diary_content or diary_content == '':
             return JsonResponse({'errno': 5, "msg": "Diary content can't be empty."})
-        diary_cover= request.FILES.get('diary_cover')
-        Diary.objects.create(topic_id=topic_id, diary_title=diary_title, diary_content=diary_content,diary_img=diary_cover)
+        diary_cover = request.FILES.get('diary_cover')
+        curr_diary = Diary(topic_id=topic_id, diary_title=diary_title, diary_content=diary_content,
+                           diary_cover=diary_cover, diary_authorId=user_id)
+        curr_diary.save()
         save_to_frontend('../se_teamwork/src/assets', diary_cover)
         return JsonResponse({'errno': 0, "msg": "You have sent a new diary."})
     else:
@@ -549,7 +549,6 @@ def upload_img(request):
         return JsonResponse({'errno': 1, 'msg': '請求方式錯誤, 只接受POST請求'})
 
 
-
 def save_to_frontend(path, file):
     """
     将文件保存到前端的静态文件目录
@@ -559,6 +558,7 @@ def save_to_frontend(path, file):
     with open(f'{path}/{file.name}', 'wb') as f:
         for chunk in file.chunks():
             f.write(chunk)
+
 
 def save_img_local(request):
     """

@@ -45,6 +45,23 @@ class Group_Members(models.Model):
     member_since = models.DateTimeField(auto_now_add=True)
     is_admin = models.BooleanField(default=False)
 
+    def to_dict(self, fields=None, exclude=None):
+        data = {}
+        for f in self._meta.concrete_fields + self._meta.many_to_many:
+            value = f.value_from_object(self)
+            if fields and f.name not in fields:
+                continue
+            if exclude and f.name in exclude:
+                continue
+            if isinstance(f, ManyToManyField):
+                value = [i.id for i in value] if self.pk else None
+            if isinstance(f, DateTimeField):
+                value = value.strftime('%Y/%m/%d %H:%M:%S') if value else None
+            if isinstance(f, models.ImageField):
+                value = value.name if value else None
+            data[f.name] = value
+        return data
+
 
 class Post(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -59,6 +76,7 @@ class Post(models.Model):
     dislikes = models.IntegerField(default=0)
     is_top = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False)
+    post_img = models.ImageField(upload_to='post_img', blank=True, null=True)
 
     def __str__(self):
         return self.post_title
